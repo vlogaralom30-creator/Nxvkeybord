@@ -12,9 +12,26 @@ enum class KeyboardMode {
 }
 
 enum class ShiftState {
-    OFF,
-    ON,
-    CAPS_LOCK
+    LOWERCASE,
+    SHIFT_ONCE,
+    CAPS_LOCK;
+
+    val isUppercase: Boolean
+        get() = this == SHIFT_ONCE || this == CAPS_LOCK
+
+    val isCapsLock: Boolean
+        get() = this == CAPS_LOCK
+
+    val isShiftOnce: Boolean
+        get() = this == SHIFT_ONCE
+
+    val isLowercase: Boolean
+        get() = this == LOWERCASE
+
+    companion object {
+        val OFF: ShiftState get() = LOWERCASE
+        val ON: ShiftState get() = SHIFT_ONCE
+    }
 }
 
 sealed interface KeyAction {

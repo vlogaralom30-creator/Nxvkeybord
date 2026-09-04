@@ -57,10 +57,11 @@ fun KeyboardRootView(
     onLanguageCycle: () -> Unit,
     onLanguageSelected: (String) -> Unit,
     onSuggestionClicked: (SuggestionItem) -> Unit,
-    onPasteClipboard: (String) -> Unit,
+    onPasteClipboard: (String, Boolean) -> Unit,
     onTogglePinClipboard: (ClipboardItem) -> Unit,
     onDeleteClipboard: (Long) -> Unit,
     onClearClipboard: () -> Unit,
+    onSyncClipboard: () -> Unit = {},
     onSaveCredential: (service: String, user: String, pass: String) -> Unit = { _, _, _ -> },
     onDeleteCredential: (Long) -> Unit = {},
     onTogglePinCredential: (SavedCredential) -> Unit = {},
@@ -107,13 +108,20 @@ fun KeyboardRootView(
                         palette = palette,
                         currentLanguage = settings.currentLanguage,
                         autoSavePrompt = autoSavePrompt,
+                        recentClip = clipboardItems.firstOrNull(),
+                        clipboardCount = clipboardItems.size,
                         onSuggestionClick = {
                             playFeedback()
                             onSuggestionClicked(it)
                         },
                         onClipboardClick = {
                             playFeedback()
+                            onSyncClipboard()
                             onModeSwitch(KeyboardMode.CLIPBOARD)
+                        },
+                        onQuickPaste = { text ->
+                            playFeedback()
+                            onPasteClipboard(text, true)
                         },
                         onVaultClick = {
                             playFeedback()
@@ -181,9 +189,9 @@ fun KeyboardRootView(
                             ClipboardKeyboardLayout(
                                 items = clipboardItems,
                                 palette = palette,
-                                onPasteItem = { text ->
+                                onPasteItem = { text, returnToKeyboard ->
                                     playFeedback()
-                                    onPasteClipboard(text)
+                                    onPasteClipboard(text, returnToKeyboard)
                                 },
                                 onTogglePin = { item ->
                                     playFeedback()
@@ -196,6 +204,10 @@ fun KeyboardRootView(
                                 onClearAll = {
                                     playFeedback()
                                     onClearClipboard()
+                                },
+                                onSyncClipboard = {
+                                    playFeedback()
+                                    onSyncClipboard()
                                 },
                                 onCloseClipboard = {
                                     playFeedback()
@@ -216,7 +228,7 @@ fun KeyboardRootView(
                                 palette = palette,
                                 onAutofillText = { text ->
                                     playFeedback()
-                                    onPasteClipboard(text)
+                                    onPasteClipboard(text, true)
                                 },
                                 onSaveNewCredential = { service, user, pass ->
                                     playFeedback()
@@ -327,7 +339,7 @@ fun KeyboardRootView(
 
                         KeyboardMode.BANGLA -> {
                             BanglaKeyLayout(
-                                isShift = shiftState != ShiftState.OFF,
+                                isShift = shiftState.isUppercase,
                                 keyHeight = keyHeight,
                                 palette = palette,
                                 enterLabel = enterLabel,
@@ -379,9 +391,14 @@ fun KeyboardRootView(
                                 enterLabel = enterLabel,
                                 onCharTyped = { char ->
                                     playFeedback()
-                                    val finalChar = when (shiftState) {
-                                        ShiftState.OFF -> char.lowercase()
-                                        ShiftState.ON, ShiftState.CAPS_LOCK -> char.uppercase()
+                                    val isLetter = char.length == 1 && char[0].isLetter()
+                                    val finalChar = if (isLetter) {
+                                        when (shiftState) {
+                                            ShiftState.LOWERCASE -> char.lowercase()
+                                            ShiftState.SHIFT_ONCE, ShiftState.CAPS_LOCK -> char.uppercase()
+                                        }
+                                    } else {
+                                        char
                                     }
                                     onCharTyped(finalChar)
                                 },

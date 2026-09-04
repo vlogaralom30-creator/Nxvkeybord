@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.entity.ClipboardItem
 import com.example.suggestion.SuggestionItem
 import com.example.theme.KeyboardPalette
 
@@ -44,8 +45,11 @@ fun SuggestionStrip(
     palette: KeyboardPalette,
     currentLanguage: String = "english",
     autoSavePrompt: AutoSavePromptData? = null,
+    recentClip: ClipboardItem? = null,
+    clipboardCount: Int = 0,
     onSuggestionClick: (SuggestionItem) -> Unit,
     onClipboardClick: () -> Unit,
+    onQuickPaste: ((String) -> Unit)? = null,
     onVaultClick: () -> Unit = {},
     onSettingsClick: () -> Unit,
     onLanguageCycle: () -> Unit = {},
@@ -140,15 +144,30 @@ fun SuggestionStrip(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                if (clipboardCount > 0) palette.accentColor.copy(alpha = 0.12f)
+                                else Color.Transparent
+                            )
                             .clickable { onClipboardClick() }
-                            .padding(horizontal = 5.dp, vertical = 6.dp)
+                            .padding(horizontal = 6.dp, vertical = 5.dp)
                             .testTag("toolbar_clipboard"),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "📋",
-                            fontSize = 14.sp
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text(
+                                text = "📋",
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = if (clipboardCount > 0) "Clipboard ($clipboardCount)" else "Clipboard",
+                                color = if (clipboardCount > 0) palette.accentColor else palette.textColor,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
 
                     Box(
@@ -174,7 +193,37 @@ fun SuggestionStrip(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (suggestions.isEmpty()) {
+                    // Quick Paste chip for the latest copied fragment
+                    if (recentClip != null && onQuickPaste != null) {
+                        val preview = if (recentClip.text.length > 18) recentClip.text.take(18) + "…" else recentClip.text
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 3.dp, vertical = 2.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(palette.accentColor.copy(alpha = 0.16f))
+                                .clickable { onQuickPaste(recentClip.text) }
+                                .padding(horizontal = 7.dp, vertical = 4.dp)
+                                .testTag("toolbar_quick_paste_chip"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Text("📋", fontSize = 10.sp)
+                                Text(
+                                    text = "Paste \"$preview\"",
+                                    color = palette.accentColor,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+
+                    if (suggestions.isEmpty() && recentClip == null) {
                         Text(
                             text = "NXV Keyboard",
                             color = palette.secondaryTextColor.copy(alpha = 0.6f),

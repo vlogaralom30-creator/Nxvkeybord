@@ -5,6 +5,7 @@ import android.text.InputType
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import java.text.BreakIterator
 
 class InputConnectionManager {
 
@@ -123,6 +124,7 @@ class InputConnectionManager {
     /**
      * Grapheme-aware safe backspace deletion.
      * Prevents breaking combining Bengali Unicode clusters and surrogate pairs.
+     * Accurately handles characters like বাংলা, ভালো, আমি, বাংলাদেশ and emoji clusters.
      */
     fun handleDelete(): Boolean {
         val ic = inputConnection ?: return false
@@ -131,33 +133,121 @@ class InputConnectionManager {
         if (composingWord.isNotEmpty()) {
             composingWord.deleteCharAt(composingWord.length - 1)
             if (composingWord.isEmpty()) {
-                ic.finishComposingText()
-                ic.deleteSurroundingText(1, 0)
+                try {
+                    ic.finishComposingText()
+                } catch (_: Exception) {}
                 return false
             }
             return true // Caller should re-evaluate composing text with remaining chars
         }
 
-        // 2. Safe deletion of selected text or surrounding code points
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            val deleted = ic.deleteSurroundingTextInCodePoints(1, 0)
-            if (deleted) return false
+        // 2. Safe deletion of selected text if any
+        val selected = try {
+            ic.getSelectedText(0)
+        } catch (_: Exception) {
+            null
+        }
+        if (!selected.isNullOrEmpty()) {
+            try {
+                ic.commitText("", 1)
+            } catch (_: Exception) {
+                sendDelKeyEvent(ic)
+            }
+            return false
         }
 
-        // Fallback for surrogate pairs or combining marks
-        val before = ic.getTextBeforeCursor(2, 0)
-        if (!before.isNullOrEmpty()) {
-            if (Character.isSurrogate(before.last())) {
-                ic.deleteSurroundingText(2, 0)
-            } else {
-                ic.deleteSurroundingText(1, 0)
-            }
-        } else {
-            // Send backspace key event
-            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
-            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL))
+        // 3. Inspect text before cursor to find exact grapheme cluster boundary
+        val textBefore = try {
+            ic.getTextBeforeCursor(64, 0)?.toString()
+        } catch (_: Exception) {
+            null
+        }
+
+        if (textBefore.isNullOrEmpty()) {
+            sendDelKeyEvent(ic)
+            return false
+        }
+
+        // Calculate how many UTF-16 code units comprise the last logical grapheme cluster
+        val charsToDelete = calculateLastGraphemeLength(textBefore)
+
+        val deleted = try {
+            ic.deleteSurroundingText(charsToDelete, 0)
+        } catch (_: Exception) {
+            false
+        }
+
+        if (!deleted) {
+            sendDelKeyEvent(ic)
         }
         return false
+    }
+
+    private fun sendDelKeyEvent(ic: InputConnection) {
+        try {
+            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
+            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL))
+        } catch (_: Exception) {}
+    }
+
+    /**
+     * Accurately calculates the length of the last user-perceived character (grapheme cluster).
+     * Prevents splitting surrogate pairs (emoji) and deletes combining vowel signs (kar)
+     * one logical component at a time without corrupting the base consonant.
+     */
+    fun calculateLastGraphemeLength(text: String): Int {
+        if (text.isEmpty()) return 0
+        if (text.length == 1) return 1
+
+        val lastChar = text.last()
+
+        // 1. Emoji & Surrogate pairs (e.g. U+1F60A 😊, flags, multi-part emojis)
+        if (Character.isSurrogate(lastChar)) {
+            return try {
+                val boundary = BreakIterator.getCharacterInstance()
+                boundary.setText(text)
+                val end = boundary.last()
+                val start = boundary.previous()
+                if (start != BreakIterator.DONE && end > start) {
+                    end - start
+                } else if (text.length >= 2 && Character.isSurrogate(text[text.length - 2])) {
+                    2
+                } else {
+                    1
+                }
+            } catch (_: Exception) {
+                if (text.length >= 2 && Character.isSurrogate(text[text.length - 2])) 2 else 1
+            }
+        }
+
+        // 2. Combining vowel marks (kar), hasanta/virama, and diacritics in Bangla & Unicode.
+        // Single tap on Backspace deletes one combining mark at a time, preserving the base consonant.
+        val type = Character.getType(lastChar)
+        val isBanglaCombiningMark = lastChar in '\u0981'..'\u0983' || // candrabindu, anusvara, visarga
+                lastChar == '\u09BC' || // nukta
+                lastChar in '\u09BE'..'\u09CD' || // vowel signs aa through au, and virama/hasanta
+                lastChar == '\u09D7' // au length mark
+        if (isBanglaCombiningMark ||
+            type == Character.NON_SPACING_MARK.toInt() ||
+            type == Character.COMBINING_SPACING_MARK.toInt()
+        ) {
+            return 1
+        }
+
+        // 3. For base characters and other scripts, use BreakIterator
+        return try {
+            val boundary = BreakIterator.getCharacterInstance()
+            boundary.setText(text)
+            val end = boundary.last()
+            val start = boundary.previous()
+            if (start != BreakIterator.DONE && end > start) {
+                end - start
+            } else {
+                1
+            }
+        } catch (_: Exception) {
+            1
+        }
     }
 
     fun handleEnter() {

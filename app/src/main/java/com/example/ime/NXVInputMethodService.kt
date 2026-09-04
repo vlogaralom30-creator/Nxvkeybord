@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.inputmethodservice.InputMethodService
+import android.text.InputType
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.compose.runtime.collectAsState
@@ -67,8 +68,12 @@ class NXVInputMethodService : InputMethodService(),
 
     // Observable states
     private var currentMode by mutableStateOf(KeyboardMode.ENGLISH)
-    private var shiftState by mutableStateOf(ShiftState.OFF)
+    private var shiftState by mutableStateOf(ShiftState.LOWERCASE)
     private var enterActionLabel by mutableStateOf("↵")
+
+    // Shift double-tap detection
+    private var lastShiftTapTime = 0L
+    private val DOUBLE_TAP_TIMEOUT_MS = 380L
 
     private val suggestionsState = MutableStateFlow<List<SuggestionItem>>(emptyList())
     private val clipboardItemsState = MutableStateFlow<List<ClipboardItem>>(emptyList())
@@ -87,6 +92,11 @@ class NXVInputMethodService : InputMethodService(),
     // Avro composing buffer
     private val avroRawBuffer = StringBuilder()
 
+    private var clipboardManager: ClipboardManager? = null
+    private val clipChangedListener = ClipboardManager.OnPrimaryClipChangedListener {
+        syncSystemClipboard()
+    }
+
     override fun onCreate() {
         super.onCreate()
         savedStateRegistryController.performRestore(null)
@@ -95,6 +105,13 @@ class NXVInputMethodService : InputMethodService(),
         feedbackManager = FeedbackManager(this)
         val app = application as? NXVApplication ?: NXVApplication.instance
         suggestionEngine = SuggestionEngine(app.repository)
+
+        // Initialize ClipboardManager listener to capture copied text fragments
+        clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        try {
+            clipboardManager?.addPrimaryClipChangedListener(clipChangedListener)
+        } catch (_: Exception) {}
+        syncSystemClipboard()
 
         // Observe Settings
         serviceScope.launch {
@@ -143,6 +160,7 @@ class NXVInputMethodService : InputMethodService(),
 
     override fun onWindowShown() {
         super.onWindowShown()
+        syncSystemClipboard()
         if (!lifecycleRegistry.currentState.isAtLeast(Lifecycle.State.STARTED)) {
             lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         }
@@ -199,11 +217,16 @@ class NXVInputMethodService : InputMethodService(),
                     onSpace = { handleSpace() },
                     onEnter = { handleEnter() },
                     onShiftToggle = { handleShiftToggle() },
-                    onModeSwitch = { mode -> currentMode = mode },
+                    onModeSwitch = { mode ->
+                        if (mode == KeyboardMode.CLIPBOARD) {
+                            syncSystemClipboard()
+                        }
+                        currentMode = mode
+                    },
                     onLanguageCycle = { cycleLanguage() },
                     onLanguageSelected = { lang -> selectLanguage(lang) },
                     onSuggestionClicked = { item -> handleSuggestionClicked(item) },
-                    onPasteClipboard = { text -> handlePaste(text) },
+                    onPasteClipboard = { text, returnToKeyboard -> handlePaste(text, returnToKeyboard) },
                     onTogglePinClipboard = { item ->
                         serviceScope.launch {
                             val app = application as? NXVApplication ?: NXVApplication.instance
@@ -222,6 +245,7 @@ class NXVInputMethodService : InputMethodService(),
                             app.repository.clearClipboard()
                         }
                     },
+                    onSyncClipboard = { syncSystemClipboard() },
                     onSaveCredential = { service, user, pass ->
                         serviceScope.launch {
                             val app = application as? NXVApplication ?: NXVApplication.instance
@@ -315,6 +339,21 @@ class NXVInputMethodService : InputMethodService(),
         isCurrentFieldPassword = inputConnectionManager.isPasswordField()
         if (isCurrentFieldPassword) {
             currentPasswordBuffer.clear()
+            shiftState = ShiftState.LOWERCASE
+        } else {
+            val capsFlags = (info?.inputType ?: 0) and InputType.TYPE_MASK_FLAGS
+            val isCapCharacters = (capsFlags and InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS) != 0
+            val isCapSentences = (capsFlags and InputType.TYPE_TEXT_FLAG_CAP_SENTENCES) != 0
+            val isCapWords = (capsFlags and InputType.TYPE_TEXT_FLAG_CAP_WORDS) != 0
+            val settings = currentSettingsState.value
+
+            if (isCapCharacters) {
+                shiftState = ShiftState.CAPS_LOCK
+            } else if (settings.autoCapitalization && (isCapSentences || isCapWords)) {
+                shiftState = ShiftState.SHIFT_ONCE
+            } else {
+                shiftState = ShiftState.LOWERCASE
+            }
         }
 
         enterActionLabel = inputConnectionManager.getEnterActionLabel()
@@ -344,6 +383,9 @@ class NXVInputMethodService : InputMethodService(),
 
     override fun onDestroy() {
         super.onDestroy()
+        try {
+            clipboardManager?.removePrimaryClipChangedListener(clipChangedListener)
+        } catch (_: Exception) {}
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
@@ -360,28 +402,42 @@ class NXVInputMethodService : InputMethodService(),
     }
 
     private fun handleCharTyped(char: String) {
+        val isLetter = char.length == 1 && char[0].isLetter()
+        val effectiveChar = if (isLetter) {
+            when (shiftState) {
+                ShiftState.LOWERCASE -> char.lowercase()
+                ShiftState.SHIFT_ONCE, ShiftState.CAPS_LOCK -> char.uppercase()
+            }
+        } else {
+            char
+        }
+
         if (isCurrentFieldPassword) {
-            currentPasswordBuffer.append(char)
+            currentPasswordBuffer.append(effectiveChar)
         } else {
             // Track potential email/username input
-            val word = inputConnectionManager.getCurrentWordBeforeCursor() + char
+            val word = inputConnectionManager.getCurrentWordBeforeCursor() + effectiveChar
             if (word.contains("@") || word.length >= 3) {
                 lastObservedUsername = word
             }
         }
 
         if (currentMode == KeyboardMode.AVRO) {
-            avroRawBuffer.append(char)
+            avroRawBuffer.append(effectiveChar)
             val converted = avroEngine.convertWord(avroRawBuffer.toString())
             inputConnectionManager.setComposing(converted, avroRawBuffer.toString())
             refreshSuggestions()
         } else {
-            inputConnectionManager.commitText(char)
-            // Auto capitalize check
-            if (shiftState == ShiftState.ON) {
-                shiftState = ShiftState.OFF
-            }
+            inputConnectionManager.commitText(effectiveChar)
             refreshSuggestions()
+        }
+
+        // Single tap shift returns to LOWERCASE only after typing an alphabetic letter.
+        // Numbers, symbols, punctuation and emoji do NOT change shift state.
+        // CAPS_LOCK remains active until explicitly toggled off.
+        if (isLetter && shiftState == ShiftState.SHIFT_ONCE) {
+            shiftState = ShiftState.LOWERCASE
+            lastShiftTapTime = 0L
         }
     }
 
@@ -394,7 +450,6 @@ class NXVInputMethodService : InputMethodService(),
             avroRawBuffer.deleteCharAt(avroRawBuffer.length - 1)
             if (avroRawBuffer.isEmpty()) {
                 inputConnectionManager.clearComposing()
-                inputConnectionManager.handleDelete()
             } else {
                 val converted = avroEngine.convertWord(avroRawBuffer.toString())
                 inputConnectionManager.setComposing(converted, avroRawBuffer.toString())
@@ -461,13 +516,36 @@ class NXVInputMethodService : InputMethodService(),
         }
     }
 
-    private fun handleShiftToggle() {
+    fun handleShiftToggle() {
+        val now = System.currentTimeMillis()
         shiftState = when (shiftState) {
-            ShiftState.OFF -> ShiftState.ON
-            ShiftState.ON -> ShiftState.CAPS_LOCK
-            ShiftState.CAPS_LOCK -> ShiftState.OFF
+            ShiftState.LOWERCASE -> {
+                lastShiftTapTime = now
+                ShiftState.SHIFT_ONCE
+            }
+            ShiftState.SHIFT_ONCE -> {
+                if (now - lastShiftTapTime <= DOUBLE_TAP_TIMEOUT_MS) {
+                    // Double tap within timeout enables CAPS LOCK
+                    lastShiftTapTime = 0L
+                    ShiftState.CAPS_LOCK
+                } else {
+                    // Tapped after delay cancels Shift, returns to LOWERCASE
+                    lastShiftTapTime = 0L
+                    ShiftState.LOWERCASE
+                }
+            }
+            ShiftState.CAPS_LOCK -> {
+                // Tapping Shift again disables Caps Lock
+                lastShiftTapTime = 0L
+                ShiftState.LOWERCASE
+            }
         }
     }
+
+    // Exposed helpers for testing
+    internal fun getCurrentShiftState(): ShiftState = shiftState
+    internal fun setCurrentShiftState(state: ShiftState) { shiftState = state }
+    internal fun setLastShiftTapTimeForTest(time: Long) { lastShiftTapTime = time }
 
     private fun handleSuggestionClicked(item: SuggestionItem) {
         inputConnectionManager.replaceCurrentWord(item.replacementText)
@@ -481,12 +559,14 @@ class NXVInputMethodService : InputMethodService(),
         refreshSuggestions()
     }
 
-    private fun handlePaste(text: String) {
+    private fun handlePaste(text: String, returnToKeyboard: Boolean = true) {
         inputConnectionManager.commitText(text)
-        currentMode = when (currentSettingsState.value.currentLanguage) {
-            "bangla" -> KeyboardMode.BANGLA
-            "avro" -> KeyboardMode.AVRO
-            else -> KeyboardMode.ENGLISH
+        if (returnToKeyboard) {
+            currentMode = when (currentSettingsState.value.currentLanguage) {
+                "bangla" -> KeyboardMode.BANGLA
+                "avro" -> KeyboardMode.AVRO
+                else -> KeyboardMode.ENGLISH
+            }
         }
     }
 
@@ -588,13 +668,13 @@ class NXVInputMethodService : InputMethodService(),
         }
     }
 
-    private fun syncSystemClipboard() {
+    internal fun syncSystemClipboard() {
         try {
-            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
-            if (cm.hasPrimaryClip() && (cm.primaryClipDescription?.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN) == true ||
-                        cm.primaryClipDescription?.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML) == true)
-            ) {
-                val item = cm.primaryClip?.getItemAt(0)
+            val cm = clipboardManager ?: getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
+            if (!cm.hasPrimaryClip()) return
+            val clipData = cm.primaryClip ?: return
+            for (i in 0 until clipData.itemCount) {
+                val item = clipData.getItemAt(i)
                 val text = item?.text?.toString() ?: item?.coerceToText(this)?.toString()
                 if (!text.isNullOrBlank()) {
                     serviceScope.launch {

@@ -35,7 +35,7 @@ fun QwertyKeyLayout(
     onLongPressLanguage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isShifted = shiftState != ShiftState.OFF
+    val isShifted = shiftState.isUppercase
 
     Column(
         modifier = modifier
@@ -66,7 +66,7 @@ fun QwertyKeyLayout(
             horizontalArrangement = Arrangement.Center
         ) {
             EnglishEngine.QWERTY_ROW_1.forEachIndexed { index, letter ->
-                val char = if (isShifted) letter.uppercase() else letter
+                val char = if (isShifted) letter.uppercase() else letter.lowercase()
                 val alt = EnglishEngine.NUMBER_ROW.getOrNull(index)
                 KeyboardKeyView(
                     label = char,
@@ -87,7 +87,7 @@ fun QwertyKeyLayout(
         ) {
             Spacer(modifier = Modifier.weight(0.5f))
             EnglishEngine.QWERTY_ROW_2.forEach { letter ->
-                val char = if (isShifted) letter.uppercase() else letter
+                val char = if (isShifted) letter.uppercase() else letter.lowercase()
                 KeyboardKeyView(
                     label = char,
                     modifier = Modifier.weight(1f),
@@ -105,23 +105,25 @@ fun QwertyKeyLayout(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Shift Key
+            // Shift Key with clear visual states
             val shiftIcon = when (shiftState) {
-                ShiftState.OFF -> "⇧"
-                ShiftState.ON -> "⬆"
+                ShiftState.LOWERCASE -> "⇧"
+                ShiftState.SHIFT_ONCE -> "⬆"
                 ShiftState.CAPS_LOCK -> "⇪"
             }
             KeyboardKeyView(
                 label = shiftIcon,
                 modifier = Modifier.weight(1.5f),
                 isSpecialAction = true,
+                isCapsLock = shiftState == ShiftState.CAPS_LOCK,
+                isShiftActive = shiftState == ShiftState.SHIFT_ONCE,
                 height = keyHeight,
                 palette = palette,
                 onTap = { onShift() }
             )
 
             EnglishEngine.QWERTY_ROW_3.forEach { letter ->
-                val char = if (isShifted) letter.uppercase() else letter
+                val char = if (isShifted) letter.uppercase() else letter.lowercase()
                 KeyboardKeyView(
                     label = char,
                     modifier = Modifier.weight(1f),
@@ -131,11 +133,12 @@ fun QwertyKeyLayout(
                 )
             }
 
-            // Backspace Key
+            // Backspace Key with continuous repeating on hold
             KeyboardKeyView(
                 label = "⌫",
                 modifier = Modifier.weight(1.5f),
                 isSpecialAction = true,
+                isRepeatable = true,
                 height = keyHeight,
                 palette = palette,
                 onTap = { onDelete() }

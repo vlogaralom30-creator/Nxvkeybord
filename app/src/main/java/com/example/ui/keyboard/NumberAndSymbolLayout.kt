@@ -103,6 +103,7 @@ fun NumberAndSymbolLayout(
                 label = "⌫",
                 modifier = Modifier.weight(1.5f),
                 isSpecialAction = true,
+                isRepeatable = true,
                 height = keyHeight,
                 palette = palette,
                 onTap = { onDelete() }

@@ -116,6 +116,7 @@ fun BanglaKeyLayout(
                 label = "⌫",
                 modifier = Modifier.weight(1.4f),
                 isSpecialAction = true,
+                isRepeatable = true,
                 height = keyHeight,
                 palette = palette,
                 onTap = { onDelete() }

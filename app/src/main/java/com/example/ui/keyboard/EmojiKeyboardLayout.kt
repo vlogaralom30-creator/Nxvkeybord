@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -154,21 +155,15 @@ fun EmojiKeyboardLayout(
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(palette.keyActionBackground)
-                    .clickable { onBackspace() }
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .testTag("emoji_backspace_btn"),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "⌫",
-                    color = palette.textColor,
-                    fontSize = 16.sp
-                )
-            }
+            KeyboardKeyView(
+                label = "⌫",
+                modifier = Modifier.width(60.dp),
+                isSpecialAction = true,
+                isRepeatable = true,
+                height = 36.dp,
+                palette = palette,
+                onTap = { onBackspace() }
+            )
         }
     }
 }
