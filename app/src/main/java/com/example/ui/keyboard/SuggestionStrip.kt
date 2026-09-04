@@ -24,12 +24,28 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AspectRatio
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -93,9 +109,11 @@ fun SuggestionStrip(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(
-                        text = "🔐",
-                        fontSize = 14.sp
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Password AutoSave",
+                        tint = palette.accentColor,
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -132,15 +150,15 @@ fun SuggestionStrip(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .clickable { autoSavePrompt.onDismiss() }
-                            .padding(horizontal = 8.dp, vertical = 5.dp)
+                            .padding(horizontal = 6.dp, vertical = 5.dp)
                             .testTag("autosave_dismiss_btn"),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "✕",
-                            color = palette.secondaryTextColor,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Dismiss",
+                            tint = palette.secondaryTextColor,
+                            modifier = Modifier.size(15.dp)
                         )
                     }
                 }
@@ -154,7 +172,7 @@ fun SuggestionStrip(
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Expand / Collapse Chevron Button (^)
+                // Expand / Collapse Chevron Button
                 Box(
                     modifier = Modifier
                         .padding(start = 2.dp, end = 4.dp)
@@ -169,19 +187,19 @@ fun SuggestionStrip(
                             shape = RoundedCornerShape(8.dp)
                         )
                         .clickable { onToggleToolbar() }
-                        .padding(horizontal = 8.dp, vertical = 5.dp)
+                        .padding(horizontal = 6.dp, vertical = 5.dp)
                         .testTag("toolbar_expand_toggle"),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(
-                            text = if (isToolbarExpanded) "⌄" else "⌃",
-                            color = if (isToolbarExpanded) palette.accentColor else palette.textColor,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
+                        Icon(
+                            imageVector = if (isToolbarExpanded) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+                            contentDescription = if (isToolbarExpanded) "Collapse Toolbar" else "Expand Toolbar",
+                            tint = if (isToolbarExpanded) palette.accentColor else palette.textColor,
+                            modifier = Modifier.size(16.dp)
                         )
                         if (!isToolbarExpanded && clipboardCount > 0) {
                             Box(
@@ -217,9 +235,14 @@ fun SuggestionStrip(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Text("📋", fontSize = 11.sp)
+                                Icon(
+                                    imageVector = Icons.Default.ContentPaste,
+                                    contentDescription = null,
+                                    tint = palette.accentColor,
+                                    modifier = Modifier.size(13.dp)
+                                )
                                 Text(
                                     text = "Paste \"$preview\"",
                                     color = palette.accentColor,
@@ -308,7 +331,7 @@ fun SuggestionStrip(
                     ) {
                         // 1. Copypad / Clipboard Action
                         ActionToolChip(
-                            icon = "📋",
+                            icon = Icons.Default.ContentPaste,
                             label = if (clipboardCount > 0) "Clipboard ($clipboardCount)" else "Clipboard",
                             palette = palette,
                             isActive = clipboardCount > 0,
@@ -318,7 +341,7 @@ fun SuggestionStrip(
 
                         // 2. Password Vault Action
                         ActionToolChip(
-                            icon = "🔐",
+                            icon = Icons.Default.Lock,
                             label = "Vault",
                             palette = palette,
                             tag = "toolbar_vault",
@@ -327,7 +350,7 @@ fun SuggestionStrip(
 
                         // 3. Theme Library Action
                         ActionToolChip(
-                            icon = "🎨",
+                            icon = Icons.Default.Palette,
                             label = "Themes",
                             palette = palette,
                             tag = "toolbar_themes",
@@ -341,7 +364,7 @@ fun SuggestionStrip(
                             else -> "English"
                         }
                         ActionToolChip(
-                            icon = "🌐",
+                            icon = Icons.Default.Language,
                             label = langLabel,
                             palette = palette,
                             tag = "toolbar_language_toggle",
@@ -351,7 +374,7 @@ fun SuggestionStrip(
 
                         // 5. Vibration / Haptics Toggle Action
                         ActionToolChip(
-                            icon = if (keyVibrationEnabled) "📳" else "📴",
+                            icon = if (keyVibrationEnabled) Icons.Default.Vibration else Icons.Default.Smartphone,
                             label = if (keyVibrationEnabled) "Vibration ON" else "Vibration OFF",
                             palette = palette,
                             isActive = keyVibrationEnabled,
@@ -361,7 +384,7 @@ fun SuggestionStrip(
 
                         // 6. Sound Toggle Action
                         ActionToolChip(
-                            icon = if (keySoundEnabled) "🔊" else "🔇",
+                            icon = if (keySoundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
                             label = if (keySoundEnabled) "Sound ON" else "Sound OFF",
                             palette = palette,
                             isActive = keySoundEnabled,
@@ -376,7 +399,7 @@ fun SuggestionStrip(
                             else -> "Full Width"
                         }
                         ActionToolChip(
-                            icon = "📱",
+                            icon = Icons.Default.AspectRatio,
                             label = oneHandLabel,
                             palette = palette,
                             isActive = oneHandedMode != "none",
@@ -386,7 +409,7 @@ fun SuggestionStrip(
 
                         // 8. Settings Action
                         ActionToolChip(
-                            icon = "⚙️",
+                            icon = Icons.Default.Settings,
                             label = "Settings",
                             palette = palette,
                             tag = "toolbar_settings",
@@ -410,7 +433,7 @@ fun SuggestionStrip(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ActionToolChip(
-    icon: String,
+    icon: ImageVector,
     label: String,
     palette: KeyboardPalette,
     isActive: Boolean = false,
@@ -440,9 +463,14 @@ private fun ActionToolChip(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            Text(text = icon, fontSize = 13.sp)
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isActive) palette.accentColor else palette.textColor,
+                modifier = Modifier.size(14.dp)
+            )
             Text(
                 text = label,
                 color = if (isActive) palette.accentColor else palette.textColor,

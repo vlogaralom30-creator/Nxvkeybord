@@ -32,16 +32,25 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -264,7 +273,7 @@ fun SettingsHomeScreen(
                                 .background(Color(0xFF4CAF50).copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("✓", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -921,7 +930,13 @@ fun SoundHapticScreen(
                     ),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("📴 Turn Vibration OFF", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(Icons.Default.Vibration, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Text("Vibration OFF", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
 
                 Button(
@@ -933,7 +948,13 @@ fun SoundHapticScreen(
                     ),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("📳 Turn Vibration ON", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(Icons.Default.Vibration, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Text("Vibration ON", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
 
@@ -1224,7 +1245,7 @@ fun ClipboardPrefsScreen(
                     modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("🔒", fontSize = 16.sp)
+                    Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Clipboard data is stored strictly in your local device database. It never leaves your phone.",
@@ -1263,7 +1284,12 @@ fun ClipboardPrefsScreen(
                                     )
                                 }
                                 IconButton(onClick = { onTogglePin(item) }) {
-                                    Text(if (item.isPinned) "📌" else "📍", fontSize = 16.sp)
+                                    Icon(
+                                        imageVector = Icons.Default.PushPin,
+                                        contentDescription = if (item.isPinned) "Unpin" else "Pin",
+                                        tint = if (item.isPinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
                                 IconButton(onClick = { onDeleteItem(item.id) }) {
                                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
@@ -1396,7 +1422,12 @@ fun VaultPrefsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🔑", fontSize = 48.sp)
+                        Icon(
+                            imageVector = Icons.Default.Key,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(48.dp)
+                        )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = if (credentials.isEmpty()) "No saved passwords yet" else "No matching accounts found",
@@ -1445,7 +1476,13 @@ fun VaultPrefsScreen(
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                         if (item.isPinned) {
-                                            Text(text = " 📌", fontSize = 12.sp)
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Icon(
+                                                imageVector = Icons.Default.PushPin,
+                                                contentDescription = "Pinned",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(14.dp)
+                                            )
                                         }
                                     }
 
@@ -1454,7 +1491,12 @@ fun VaultPrefsScreen(
                                             onClick = { onTogglePin(item) },
                                             modifier = Modifier.size(32.dp)
                                         ) {
-                                            Text(if (item.isPinned) "📌" else "📍", fontSize = 14.sp)
+                                            Icon(
+                                                imageVector = Icons.Default.PushPin,
+                                                contentDescription = if (item.isPinned) "Unpin" else "Pin",
+                                                tint = if (item.isPinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(16.dp)
+                                            )
                                         }
                                         IconButton(
                                             onClick = { onDeleteCredential(item.id) },
@@ -1480,13 +1522,20 @@ fun VaultPrefsScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Text(
-                                            text = "👤 ${item.username}",
-                                            fontSize = 13.sp,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = item.username,
+                                                fontSize = 13.sp,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
                                         Text("Copy", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
@@ -1505,25 +1554,43 @@ fun VaultPrefsScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(
-                                        text = if (isRevealed) "🔑 ${item.password}" else "🔑 ••••••••••••",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = if (isRevealed) item.password else "••••••••••••",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
 
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = if (isRevealed) "Hide 🙈" else "Show 👁️",
-                                            fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.secondary,
-                                            fontWeight = FontWeight.Medium,
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
                                             modifier = Modifier
                                                 .clickable {
                                                     revealedIds = if (isRevealed) revealedIds - item.id else revealedIds + item.id
                                                 }
                                                 .padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isRevealed) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                                contentDescription = if (isRevealed) "Hide" else "Show",
+                                                modifier = Modifier.size(14.dp),
+                                                tint = MaterialTheme.colorScheme.secondary
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = if (isRevealed) "Hide" else "Show",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.secondary,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text("Copy", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                                     }
@@ -1662,31 +1729,31 @@ fun PrivacyScreen(onBack: () -> Unit) {
             }
 
             PrivacyPoint(
-                icon = "🌐",
+                icon = Icons.Default.Language,
                 title = "100% Offline Operation",
                 description = "NXV Keyboard does not request or hold internet permissions. Keystrokes cannot be transmitted across the network."
             )
 
             PrivacyPoint(
-                icon = "🔒",
+                icon = Icons.Default.Lock,
                 title = "Zero Text Logging",
                 description = "We never log your keystrokes, personal messages, credit cards, or passwords."
             )
 
             PrivacyPoint(
-                icon = "🛡️",
+                icon = Icons.Default.Security,
                 title = "Password Field Isolation",
                 description = "When a password field is focused, suggestion algorithms and dictionary learning are completely disabled."
             )
 
             PrivacyPoint(
-                icon = "💾",
+                icon = Icons.Default.Storage,
                 title = "Local Device Storage Only",
                 description = "Your personal dictionary words, text shortcuts, and clipboard history exist exclusively in an encrypted-at-rest SQLite database on your hardware."
             )
 
             PrivacyPoint(
-                icon = "👤",
+                icon = Icons.Default.Person,
                 title = "No Account Required",
                 description = "All features are immediately available without creating an account or providing an email address."
             )
@@ -1695,7 +1762,7 @@ fun PrivacyScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun PrivacyPoint(icon: String, title: String, description: String) {
+private fun PrivacyPoint(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, description: String) {
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
@@ -1706,7 +1773,12 @@ private fun PrivacyPoint(icon: String, title: String, description: String) {
                 .padding(14.dp),
             verticalAlignment = Alignment.Top
         ) {
-            Text(icon, fontSize = 22.sp)
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
             Spacer(modifier = Modifier.width(14.dp))
             Column {
                 Text(text = title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)

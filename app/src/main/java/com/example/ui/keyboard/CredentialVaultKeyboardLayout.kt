@@ -17,11 +17,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -86,14 +97,22 @@ fun CredentialVaultKeyboardLayout(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = palette.accentColor,
+                    modifier = Modifier.size(15.dp)
+                )
                 Text(
-                    text = "🔐 Password Vault",
+                    text = "Password Vault",
                     color = palette.textColor,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.width(6.dp))
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
@@ -119,12 +138,23 @@ fun CredentialVaultKeyboardLayout(
                         .testTag("vault_add_btn"),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "+ Add",
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = "Add",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -137,11 +167,11 @@ fun CredentialVaultKeyboardLayout(
                         .testTag("vault_close_btn"),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "✕",
-                        color = palette.textColor,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = palette.textColor,
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
@@ -159,6 +189,13 @@ fun CredentialVaultKeyboardLayout(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(16.dp)
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = palette.secondaryTextColor.copy(alpha = 0.6f),
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = "No saved passwords yet",
                         color = palette.textColor,
@@ -198,7 +235,10 @@ fun CredentialVaultKeyboardLayout(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
                                     Text(
                                         text = item.serviceName.ifBlank { "Account" },
                                         color = palette.accentColor,
@@ -206,7 +246,12 @@ fun CredentialVaultKeyboardLayout(
                                         fontWeight = FontWeight.Bold
                                     )
                                     if (item.isPinned) {
-                                        Text(text = " 📌", fontSize = 10.sp)
+                                        Icon(
+                                            imageVector = Icons.Default.PushPin,
+                                            contentDescription = "Pinned",
+                                            tint = palette.accentColor,
+                                            modifier = Modifier.size(11.dp)
+                                        )
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(2.dp))
@@ -221,8 +266,15 @@ fun CredentialVaultKeyboardLayout(
                                             .padding(horizontal = 6.dp, vertical = 2.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = null,
+                                            tint = palette.secondaryTextColor,
+                                            modifier = Modifier.size(11.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(3.dp))
                                         Text(
-                                            text = "👤 ${item.username}",
+                                            text = item.username,
                                             color = palette.textColor,
                                             fontSize = 11.sp,
                                             maxLines = 1,
@@ -247,8 +299,15 @@ fun CredentialVaultKeyboardLayout(
                                         .padding(horizontal = 6.dp, vertical = 2.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Key,
+                                        contentDescription = null,
+                                        tint = palette.secondaryTextColor,
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
                                     Text(
-                                        text = if (isRevealed) "🔑 ${item.password}" else "🔑 ••••••••",
+                                        text = if (isRevealed) item.password else "••••••••",
                                         color = palette.textColor,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium
@@ -277,7 +336,12 @@ fun CredentialVaultKeyboardLayout(
                                     .padding(6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(text = if (isRevealed) "🙈" else "👁️", fontSize = 12.sp)
+                                Icon(
+                                    imageVector = if (isRevealed) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (isRevealed) "Hide Password" else "Show Password",
+                                    tint = palette.secondaryTextColor,
+                                    modifier = Modifier.size(14.dp)
+                                )
                             }
 
                             // Pin
@@ -288,7 +352,12 @@ fun CredentialVaultKeyboardLayout(
                                     .padding(6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(text = if (item.isPinned) "📌" else "📍", fontSize = 12.sp)
+                                Icon(
+                                    imageVector = Icons.Default.PushPin,
+                                    contentDescription = if (item.isPinned) "Unpin" else "Pin",
+                                    tint = if (item.isPinned) palette.accentColor else palette.secondaryTextColor,
+                                    modifier = Modifier.size(14.dp)
+                                )
                             }
 
                             // Delete
@@ -299,7 +368,12 @@ fun CredentialVaultKeyboardLayout(
                                     .padding(6.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(text = "🗑️", fontSize = 12.sp)
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    tint = palette.secondaryTextColor,
+                                    modifier = Modifier.size(14.dp)
+                                )
                             }
                         }
                     }

@@ -18,6 +18,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Backspace
+import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.North
+import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -400,17 +407,61 @@ fun KeyboardKeyView(
                             }
                         }
                     } else {
-                        Text(
-                            text = label,
-                            color = labelColor,
-                            fontSize = if (label.length > 2) 13.sp else 18.sp,
-                            fontWeight = when {
-                                isPrimaryAction || isCapsLock -> FontWeight.Bold
-                                isSpecialAction || isShiftActive -> FontWeight.SemiBold
-                                else -> FontWeight.Medium
-                            },
-                            maxLines = 1
-                        )
+                        when (label) {
+                            "😊" -> {
+                                Icon(
+                                    imageVector = Icons.Default.SentimentSatisfiedAlt,
+                                    contentDescription = "Emoji",
+                                    tint = labelColor,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            "🌐" -> {
+                                Icon(
+                                    imageVector = Icons.Default.Language,
+                                    contentDescription = "Language",
+                                    tint = labelColor,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
+                            "⌫" -> {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Backspace,
+                                    contentDescription = "Backspace",
+                                    tint = labelColor,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            "↵" -> {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardReturn,
+                                    contentDescription = "Enter",
+                                    tint = labelColor,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            "⇧", "⬆", "⇪" -> {
+                                Icon(
+                                    imageVector = Icons.Default.North,
+                                    contentDescription = "Shift",
+                                    tint = labelColor,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
+                            else -> {
+                                Text(
+                                    text = label,
+                                    color = labelColor,
+                                    fontSize = if (label.length > 2) 13.sp else 18.sp,
+                                    fontWeight = when {
+                                        isPrimaryAction || isCapsLock -> FontWeight.Bold
+                                        isSpecialAction || isShiftActive -> FontWeight.SemiBold
+                                        else -> FontWeight.Medium
+                                    },
+                                    maxLines = 1
+                                )
+                            }
+                        }
                     }
                 }
             }

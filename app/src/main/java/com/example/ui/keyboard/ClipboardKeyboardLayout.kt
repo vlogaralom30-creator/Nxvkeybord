@@ -27,11 +27,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -137,7 +148,12 @@ fun ClipboardKeyboardLayout(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Text(text = "⌨️", fontSize = 12.sp)
+                        Icon(
+                            imageVector = Icons.Default.Keyboard,
+                            contentDescription = "Typing",
+                            tint = palette.textColor,
+                            modifier = Modifier.size(13.dp)
+                        )
                         Text(
                             text = "Typing",
                             color = palette.textColor,
@@ -165,10 +181,16 @@ fun ClipboardKeyboardLayout(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentPaste,
+                            contentDescription = "All Clips",
+                            tint = if (isAllSelected) palette.accentColor else palette.secondaryTextColor,
+                            modifier = Modifier.size(13.dp)
+                        )
                         Text(
-                            text = "📋 All",
+                            text = "All",
                             color = if (isAllSelected) palette.accentColor else palette.secondaryTextColor,
                             fontSize = 11.sp,
                             fontWeight = if (isAllSelected) FontWeight.Bold else FontWeight.Medium
@@ -202,10 +224,16 @@ fun ClipboardKeyboardLayout(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.PushPin,
+                            contentDescription = "Pinned Clips",
+                            tint = if (isPinnedSelected) palette.accentColor else palette.secondaryTextColor,
+                            modifier = Modifier.size(13.dp)
+                        )
                         Text(
-                            text = "📌 Pinned",
+                            text = "Pinned",
                             color = if (isPinnedSelected) palette.accentColor else palette.secondaryTextColor,
                             fontSize = 11.sp,
                             fontWeight = if (isPinnedSelected) FontWeight.Bold else FontWeight.Medium
@@ -240,7 +268,12 @@ fun ClipboardKeyboardLayout(
                         .testTag("clipboard_btn_search"),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "🔍", fontSize = 13.sp)
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = palette.textColor,
+                        modifier = Modifier.size(15.dp)
+                    )
                 }
 
                 // Sync System Clipboard
@@ -252,7 +285,12 @@ fun ClipboardKeyboardLayout(
                         .testTag("clipboard_btn_sync"),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "🔄", fontSize = 13.sp)
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Sync",
+                        tint = palette.textColor,
+                        modifier = Modifier.size(15.dp)
+                    )
                 }
 
                 // Clear All (Unpinned)
@@ -265,7 +303,12 @@ fun ClipboardKeyboardLayout(
                             .testTag("clipboard_clear_all"),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "🗑️", fontSize = 13.sp)
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Clear All",
+                            tint = palette.textColor,
+                            modifier = Modifier.size(15.dp)
+                        )
                     }
                 }
 
@@ -278,11 +321,11 @@ fun ClipboardKeyboardLayout(
                         .testTag("clipboard_close_btn"),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "✕",
-                        color = palette.textColor,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = palette.textColor,
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
@@ -298,7 +341,14 @@ fun ClipboardKeyboardLayout(
                     .padding(horizontal = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "🔍", fontSize = 12.sp, modifier = Modifier.padding(end = 6.dp))
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null,
+                    tint = palette.secondaryTextColor,
+                    modifier = Modifier
+                        .padding(end = 6.dp)
+                        .size(14.dp)
+                )
                 Box(modifier = Modifier.weight(1f)) {
                     if (searchQuery.isEmpty()) {
                         Text(
@@ -329,7 +379,12 @@ fun ClipboardKeyboardLayout(
                             .padding(4.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "✕", color = palette.secondaryTextColor, fontSize = 11.sp)
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Clear",
+                            tint = palette.secondaryTextColor,
+                            modifier = Modifier.size(12.dp)
+                        )
                     }
                 }
             }
@@ -369,8 +424,14 @@ fun ClipboardKeyboardLayout(
                     .padding(horizontal = 8.dp, vertical = 3.dp)
                     .testTag("clipboard_toggle_autoclose")
             ) {
+                Icon(
+                    imageVector = if (autoCloseOnPaste) Icons.Default.Bolt else Icons.Default.ContentPaste,
+                    contentDescription = null,
+                    tint = if (autoCloseOnPaste) palette.accentColor else palette.secondaryTextColor,
+                    modifier = Modifier.size(11.dp)
+                )
                 Text(
-                    text = if (autoCloseOnPaste) "⚡ Return after paste: ON" else "📋 Multi-paste mode: ON",
+                    text = if (autoCloseOnPaste) "Return after paste: ON" else "Multi-paste mode: ON",
                     fontSize = 10.sp,
                     color = if (autoCloseOnPaste) palette.accentColor else palette.secondaryTextColor,
                     fontWeight = FontWeight.SemiBold
@@ -439,7 +500,18 @@ fun ClipboardKeyboardLayout(
                             colors = ButtonDefaults.buttonColors(containerColor = palette.accentColor),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                         ) {
-                            Text(if (targetItem.isPinned) "Unpin" else "Pin 📌", fontSize = 11.sp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PushPin,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text(if (targetItem.isPinned) "Unpin" else "Pin", fontSize = 11.sp)
+                            }
                         }
                         Spacer(modifier = Modifier.width(6.dp))
                         Button(
@@ -452,7 +524,18 @@ fun ClipboardKeyboardLayout(
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                         ) {
-                            Text("Delete 🗑️", fontSize = 11.sp, color = Color.White)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text("Delete", fontSize = 11.sp, color = Color.White)
+                            }
                         }
                     }
                 }
@@ -471,10 +554,21 @@ fun ClipboardKeyboardLayout(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(16.dp)
                 ) {
+                    val emptyIcon = if (searchQuery.isNotEmpty()) Icons.Default.Search
+                    else if (selectedTab == ClipboardTab.PINNED) Icons.Default.PushPin
+                    else Icons.Default.ContentPaste
+
+                    Icon(
+                        imageVector = emptyIcon,
+                        contentDescription = null,
+                        tint = palette.secondaryTextColor.copy(alpha = 0.6f),
+                        modifier = Modifier.size(36.dp)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = if (searchQuery.isNotEmpty()) "🔍 No matching clips"
-                        else if (selectedTab == ClipboardTab.PINNED) "📌 No pinned fragments"
-                        else "📋 Clipboard is empty",
+                        text = if (searchQuery.isNotEmpty()) "No matching clips"
+                        else if (selectedTab == ClipboardTab.PINNED) "No pinned fragments"
+                        else "Clipboard is empty",
                         color = palette.textColor,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
@@ -499,12 +593,23 @@ fun ClipboardKeyboardLayout(
                                 .testTag("clipboard_sync_empty_btn"),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "🔄 Check System Clipboard",
-                                color = palette.accentColor,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = null,
+                                    tint = palette.accentColor,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = "Check System Clipboard",
+                                    color = palette.accentColor,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -608,9 +713,11 @@ fun ClipboardKeyboardLayout(
                                             .testTag("clipboard_pin_${item.id}"),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = if (item.isPinned) "📌" else "📍",
-                                            fontSize = 12.sp
+                                        Icon(
+                                            imageVector = Icons.Default.PushPin,
+                                            contentDescription = if (item.isPinned) "Unpin" else "Pin",
+                                            tint = if (item.isPinned) palette.accentColor else palette.secondaryTextColor,
+                                            modifier = Modifier.size(13.dp)
                                         )
                                     }
 
@@ -623,9 +730,11 @@ fun ClipboardKeyboardLayout(
                                             .testTag("clipboard_delete_${item.id}"),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = "🗑️",
-                                            fontSize = 11.sp
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Delete",
+                                            tint = palette.secondaryTextColor,
+                                            modifier = Modifier.size(13.dp)
                                         )
                                     }
                                 }
@@ -652,12 +761,23 @@ fun ClipboardKeyboardLayout(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 if (isRecentlyPasted) {
-                                    Text(
-                                        text = "✓ Pasted into field!",
-                                        color = Color(0xFF4CAF50),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = Color(0xFF4CAF50),
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Text(
+                                            text = "Pasted into field!",
+                                            color = Color(0xFF4CAF50),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 } else {
                                     Text(
                                         text = "Tap to paste",
@@ -683,7 +803,12 @@ fun ClipboardKeyboardLayout(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                                     ) {
-                                        Text(text = "📋", fontSize = 10.sp)
+                                        Icon(
+                                            imageVector = Icons.Default.ContentPaste,
+                                            contentDescription = null,
+                                            tint = palette.accentColor,
+                                            modifier = Modifier.size(11.dp)
+                                        )
                                         Text(
                                             text = "Paste",
                                             color = palette.accentColor,

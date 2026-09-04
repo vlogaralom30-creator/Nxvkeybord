@@ -22,10 +22,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -51,6 +53,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -159,9 +162,9 @@ fun OnboardingView(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                FeatureBullet(icon = "⌨️", title = "Fast Multi-lingual Typing", desc = "English QWERTY, Bangla Unicode & Avro Phonetics")
-                                FeatureBullet(icon = "🔒", title = "100% Private & Offline", desc = "Zero text logging, zero cloud tracking, local storage only")
-                                FeatureBullet(icon = "⚡", title = "Smart Suggestions & Shortcuts", desc = "Live word suggestions, learned words & text expansions")
+                                FeatureBullet(icon = Icons.Default.Keyboard, title = "Fast Multi-lingual Typing", desc = "English QWERTY, Bangla Unicode & Avro Phonetics")
+                                FeatureBullet(icon = Icons.Default.Lock, title = "100% Private & Offline", desc = "Zero text logging, zero cloud tracking, local storage only")
+                                FeatureBullet(icon = Icons.Default.Bolt, title = "Smart Suggestions & Shortcuts", desc = "Live word suggestions, learned words & text expansions")
                             }
                         }
                     }
@@ -276,7 +279,7 @@ fun OnboardingView(
                                     Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50))
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
-                                        text = "✓ NXV Keyboard is enabled in Settings!",
+                                        text = "NXV Keyboard is enabled in Settings!",
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.SemiBold
                                     )
@@ -300,7 +303,7 @@ fun OnboardingView(
                         ) {
                             Icon(imageVector = Icons.Default.Keyboard, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(if (isKeyboardEnabled) "Settings Verified ✓ (Re-open)" else "Open Keyboard Settings", fontSize = 16.sp)
+                            Text(if (isKeyboardEnabled) "Settings Verified (Re-open)" else "Open Keyboard Settings", fontSize = 16.sp)
                         }
 
                         Spacer(modifier = Modifier.height(20.dp))
@@ -366,7 +369,7 @@ fun OnboardingView(
                                     Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50))
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
-                                        text = "✓ NXV Keyboard is your active keyboard!",
+                                        text = "NXV Keyboard is your active keyboard!",
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.SemiBold
                                     )
@@ -413,7 +416,7 @@ fun OnboardingView(
                         ) {
                             Icon(imageVector = Icons.Default.Check, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(if (isKeyboardSelected) "Switch Keyboard (Verified ✓)" else "Select Active Keyboard", fontSize = 16.sp)
+                            Text(if (isKeyboardSelected) "Switch Keyboard (Verified)" else "Select Active Keyboard", fontSize = 16.sp)
                         }
                     }
                 }
@@ -461,9 +464,16 @@ fun OnboardingView(
 }
 
 @Composable
-private fun FeatureBullet(icon: String, title: String, desc: String) {
+private fun FeatureBullet(icon: ImageVector, title: String, desc: String) {
     Row(verticalAlignment = Alignment.Top) {
-        Text(text = icon, fontSize = 20.sp, modifier = Modifier.padding(top = 2.dp))
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .size(20.dp)
+        )
         Spacer(modifier = Modifier.width(12.dp))
         Column {
             Text(text = title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
