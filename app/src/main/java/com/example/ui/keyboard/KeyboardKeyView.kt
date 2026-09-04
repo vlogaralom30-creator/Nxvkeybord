@@ -8,8 +8,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -35,14 +37,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -51,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.theme.KeyPopupStyle
 import com.example.theme.KeyboardPalette
+import com.example.theme.KittyThemeIcons
 import com.example.theme.PuppyPopupCharacter
 import com.example.theme.SpacebarStyle
 import com.example.theme.StrawberryThemeIcons
@@ -92,6 +99,9 @@ fun KeyboardKeyView(
         label = "key_scale"
     )
 
+    val isKittenSpecialKey = palette.specialIconStyle == ThemeSpecialIconStyle.KAWAII_KITTEN &&
+            (label.lowercase() == "s" || label.lowercase() == "i")
+
     // Determine Key Background Color based on Theme & State
     val bgColor = when {
         isPressed -> when {
@@ -103,13 +113,36 @@ fun KeyboardKeyView(
         }
         isCapsLock -> palette.accentColor
         isShiftActive -> palette.keyPressedBackground
+        isKittenSpecialKey -> if (isPressed) palette.keyPressedBackground else palette.keyActionBackground
         isPrimaryAction -> if (palette.specialIconStyle == ThemeSpecialIconStyle.PUPPY_MINIMAL) palette.keyActionBackground else palette.accentColor
         isSpecialAction -> palette.keyActionBackground
         else -> palette.keyBackground
     }
 
+    val isRetroMech = palette.specialIconStyle == ThemeSpecialIconStyle.RETRO_MECH
+    val isKeyOrange = label == "Space" || (isSpaceBar && palette.spacebarStyle == SpacebarStyle.RETRO_MECH_SPACE)
+    val isKeyWhite = isAlphabeticKey || label == "😊" || label == "🌐" || label == "." || label == "," || label == " Smiley" || label.contains("smiley") || label == "Emoji"
+
     // Determine Label Text Color based on Theme & State
     val labelColor = when {
+        isRetroMech -> {
+            when {
+                isKeyWhite -> {
+                    if (isAlphabeticKey) {
+                        Color(0xFF0F448C) // Bold cobalt blue for letters
+                    } else {
+                        Color(0xFFE5523D) // Orange-red for Smiley, Globe, and dot/comma
+                    }
+                }
+                isKeyOrange -> {
+                    Color.White
+                }
+                else -> {
+                    // Dark blue-grey modifiers have vivid orange-red icons/labels!
+                    Color(0xFFE5523D)
+                }
+            }
+        }
         isPressed && palette.popupStyle == KeyPopupStyle.PUPPY_CHARACTER && label.length == 1 && label[0].isLetter() -> Color.White
         isCapsLock || (isPrimaryAction && palette.specialIconStyle != ThemeSpecialIconStyle.PUPPY_MINIMAL) -> palette.onAccentColor
         isShiftActive && palette.specialIconStyle != ThemeSpecialIconStyle.STRAWBERRY_DESSERT -> palette.accentColor
@@ -271,8 +304,62 @@ fun KeyboardKeyView(
         }
     }
 
-    Box(
-        modifier = modifier
+    val density = LocalDensity.current
+    val bevelHeight = with(density) { 4.dp.toPx() }
+    val pressedOffset = with(density) { if (isPressed) 2.5.dp.toPx() else 0f }
+
+    val keyModifier = if (isRetroMech) {
+        modifier
+            .padding(horizontal = 2.dp, vertical = 2.5.dp)
+            .height(height)
+            .scale(scale)
+            .drawBehind {
+                val radius = palette.keyCornerRadius.toPx()
+                val shadowColor = when {
+                    isKeyOrange -> Color(0xFFAC2E1E) // Dark orange-red bevel base
+                    isKeyWhite -> Color(0xFFB5C1C9) // Bevel base for white keycaps
+                    else -> Color(0xFF142936) // Dark blue-teal bevel base
+                }
+                val faceColor = when {
+                    isKeyOrange -> if (isPressed) Color(0xFFC7412E) else palette.accentColor
+                    isKeyWhite -> if (isPressed) palette.keyPressedBackground else palette.keyBackground
+                    else -> if (isPressed) Color(0xFF193242) else palette.keyActionBackground
+                }
+                val highlightColor = when {
+                    isKeyOrange -> Color(0xFFFF8B7A) // Soft orange highlight line
+                    isKeyWhite -> Color(0xFFFFFFFF) // Crisp white highlight line
+                    else -> Color(0xFF3B6785) // Soft blue highlight line
+                }
+
+                // 1. Draw bottom 3D bevel base shadow
+                drawRoundRect(
+                    color = shadowColor,
+                    topLeft = Offset(0f, bevelHeight),
+                    size = Size(size.width, size.height - bevelHeight),
+                    cornerRadius = CornerRadius(radius, radius)
+                )
+
+                // 2. Draw top face (offset downwards when pressed)
+                drawRoundRect(
+                    color = faceColor,
+                    topLeft = Offset(0f, pressedOffset),
+                    size = Size(size.width, size.height - bevelHeight),
+                    cornerRadius = CornerRadius(radius, radius)
+                )
+
+                // 3. Draw fine highlight stroke on the top face
+                drawRoundRect(
+                    color = highlightColor,
+                    topLeft = Offset(0f, pressedOffset),
+                    size = Size(size.width, size.height - bevelHeight),
+                    cornerRadius = CornerRadius(radius, radius),
+                    style = Stroke(width = 1.dp.toPx())
+                )
+            }
+            .then(gestureModifier)
+            .testTag("key_$label")
+    } else {
+        modifier
             .padding(horizontal = 2.dp, vertical = 2.5.dp)
             .height(height)
             .scale(scale)
@@ -289,16 +376,51 @@ fun KeyboardKeyView(
                 shape = cornerShape
             )
             .then(gestureModifier)
-            .testTag("key_$label"),
+            .testTag("key_$label")
+    }
+
+    val contentOffsetY = if (isRetroMech) {
+        if (isPressed) 2.5.dp else 0.dp
+    } else {
+        0.dp
+    }
+
+    Box(
+        modifier = keyModifier,
         contentAlignment = Alignment.Center
     ) {
         // Main key surface content
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .offset(y = contentOffsetY),
             contentAlignment = Alignment.Center
         ) {
             // Check for theme-specific special icon drawings
             when {
+                // KAWAII KITTEN SPECIAL DRAWINGS
+                palette.specialIconStyle == ThemeSpecialIconStyle.KAWAII_KITTEN && (label == "⇧" || label == "⬆" || label == "⇪") -> {
+                    KittyThemeIcons.KittyShiftIcon(
+                        size = (height * 0.58f).coerceIn(20.dp, 28.dp),
+                        isShifted = isShiftActive || isCapsLock
+                    )
+                }
+                palette.specialIconStyle == ThemeSpecialIconStyle.KAWAII_KITTEN && label == "⌫" -> {
+                    KittyThemeIcons.KittyBackspaceIcon(
+                        size = (height * 0.58f).coerceIn(20.dp, 28.dp)
+                    )
+                }
+                palette.specialIconStyle == ThemeSpecialIconStyle.KAWAII_KITTEN && label.lowercase() == "s" -> {
+                    KittyThemeIcons.CutePawIcon(
+                        size = (height * 0.65f).coerceIn(22.dp, 32.dp)
+                    )
+                }
+                palette.specialIconStyle == ThemeSpecialIconStyle.KAWAII_KITTEN && label.lowercase() == "i" -> {
+                    KittyThemeIcons.KittenFaceIcon(
+                        size = (height * 0.72f).coerceIn(24.dp, 36.dp)
+                    )
+                }
+
                 // 1. STRAWBERRY DESSERT THEME SPECIAL ICONS
                 palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT && (label == "⇧" || label == "⬆" || label == "⇪") -> {
                     StrawberryThemeIcons.StrawberryShiftIcon(
@@ -403,6 +525,31 @@ fun KeyboardKeyView(
                 else -> {
                     if (isSpaceBar) {
                         when (palette.spacebarStyle) {
+                            SpacebarStyle.RETRO_MECH_SPACE -> {
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    // Empty box to keep it completely clean and elegant, matching the reference image perfectly!
+                                }
+                            }
+                            SpacebarStyle.KITTY_PAW_BAR -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        KittyThemeIcons.CutePawIcon(size = 18.dp)
+                                        Text(
+                                            text = "Space",
+                                            color = palette.textColor,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        KittyThemeIcons.CutePawIcon(size = 18.dp)
+                                    }
+                                }
+                            }
                             SpacebarStyle.PUPPY_BRACKET -> {
                                 Box(
                                     modifier = Modifier.fillMaxSize(),

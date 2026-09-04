@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -338,6 +339,222 @@ fun PuppyPopupCharacter(
                 color = Color(0xFF1E88E5),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+object KittyThemeIcons {
+
+    @Composable
+    fun CutePawIcon(
+        modifier: Modifier = Modifier,
+        size: Dp = 24.dp
+    ) {
+        Canvas(modifier = modifier.size(size)) {
+            val w = this.size.width
+            val h = this.size.height
+
+            // Background / Outer border of the paw (White filled with Black outline)
+            val outerPawPath = Path().apply {
+                moveTo(w * 0.5f, h * 0.92f)
+                cubicTo(w * 0.12f, h * 0.92f, w * 0.10f, h * 0.40f, w * 0.32f, h * 0.34f)
+                cubicTo(w * 0.42f, h * 0.31f, w * 0.58f, h * 0.31f, w * 0.68f, h * 0.34f)
+                cubicTo(w * 0.90f, h * 0.40f, w * 0.88f, h * 0.92f, w * 0.5f, h * 0.92f)
+                close()
+            }
+            drawPath(path = outerPawPath, color = Color.White)
+            drawPath(path = outerPawPath, color = Color.Black, style = Stroke(width = 2.2f))
+
+            // Center pink main pad
+            val centerPad = Path().apply {
+                moveTo(w * 0.5f, h * 0.54f)
+                cubicTo(w * 0.32f, h * 0.54f, w * 0.28f, h * 0.84f, w * 0.5f, h * 0.86f)
+                cubicTo(w * 0.72f, h * 0.84f, w * 0.68f, h * 0.54f, w * 0.5f, h * 0.54f)
+                close()
+            }
+            drawPath(path = centerPad, color = Color(0xFFFFB2BC))
+            drawPath(path = centerPad, color = Color.Black, style = Stroke(width = 1.6f))
+
+            // 4 outer small toe pads (filled with pink, black outline)
+            val toeRadius = w * 0.08f
+            val toes = listOf(
+                Offset(w * 0.28f, h * 0.46f),
+                Offset(w * 0.40f, h * 0.32f),
+                Offset(w * 0.60f, h * 0.32f),
+                Offset(w * 0.72f, h * 0.46f)
+            )
+            toes.forEach { center ->
+                drawCircle(color = Color(0xFFFFB2BC), radius = toeRadius, center = center)
+                drawCircle(color = Color.Black, radius = toeRadius, center = center, style = Stroke(width = 1.6f))
+            }
+        }
+    }
+
+    @Composable
+    fun KittenFaceIcon(
+        modifier: Modifier = Modifier,
+        size: Dp = 24.dp
+    ) {
+        Canvas(modifier = modifier.size(size)) {
+            val w = this.size.width
+            val h = this.size.height
+
+            // Outer Head Shape (horizontal oval)
+            val headPath = Path().apply {
+                addOval(Rect(w * 0.15f, h * 0.30f, w * 0.85f, h * 0.80f))
+            }
+
+            // Left Ear
+            val leftEar = Path().apply {
+                moveTo(w * 0.22f, h * 0.38f)
+                lineTo(w * 0.18f, h * 0.12f)
+                lineTo(w * 0.38f, h * 0.32f)
+                close()
+            }
+
+            // Right Ear
+            val rightEar = Path().apply {
+                moveTo(w * 0.62f, h * 0.32f)
+                lineTo(w * 0.82f, h * 0.12f)
+                lineTo(w * 0.78f, h * 0.38f)
+                close()
+            }
+
+            // Draw Ears (Fill with White, then outline with Black)
+            drawPath(path = leftEar, color = Color.White)
+            drawPath(path = leftEar, color = Color.Black, style = Stroke(width = 2.2f))
+
+            // Pink inner ears
+            val leftEarInner = Path().apply {
+                moveTo(w * 0.24f, h * 0.34f)
+                lineTo(w * 0.20f, h * 0.18f)
+                lineTo(w * 0.34f, h * 0.30f)
+                close()
+            }
+            drawPath(path = leftEarInner, color = Color(0xFFFFB2BC))
+
+            drawPath(path = rightEar, color = Color.White)
+            drawPath(path = rightEar, color = Color.Black, style = Stroke(width = 2.2f))
+
+            val rightEarInner = Path().apply {
+                moveTo(w * 0.66f, h * 0.30f)
+                lineTo(w * 0.80f, h * 0.18f)
+                lineTo(w * 0.76f, h * 0.34f)
+                close()
+            }
+            drawPath(path = rightEarInner, color = Color(0xFFFFB2BC))
+
+            // Fill Head with White, then outline with Black
+            drawPath(path = headPath, color = Color.White)
+            drawPath(path = headPath, color = Color.Black, style = Stroke(width = 2.2f))
+
+            // Eyes (two tiny black circles)
+            drawCircle(color = Color.Black, radius = 2.2f, center = Offset(w * 0.35f, h * 0.55f))
+            drawCircle(color = Color.Black, radius = 2.2f, center = Offset(w * 0.65f, h * 0.55f))
+
+            // Nose (tiny pink dot)
+            drawCircle(color = Color(0xFFFFB2BC), radius = 1.5f, center = Offset(w * 0.50f, h * 0.62f))
+
+            // Whiskers (two lines on left, two on right)
+            // Left whiskers
+            drawLine(color = Color.Black, start = Offset(w * 0.22f, h * 0.58f), end = Offset(w * 0.08f, h * 0.56f), strokeWidth = 1.6f)
+            drawLine(color = Color.Black, start = Offset(w * 0.22f, h * 0.62f), end = Offset(w * 0.08f, h * 0.64f), strokeWidth = 1.6f)
+            // Right whiskers
+            drawLine(color = Color.Black, start = Offset(w * 0.78f, h * 0.58f), end = Offset(w * 0.92f, h * 0.56f), strokeWidth = 1.6f)
+            drawLine(color = Color.Black, start = Offset(w * 0.78f, h * 0.62f), end = Offset(w * 0.92f, h * 0.64f), strokeWidth = 1.6f)
+
+            // Bow on the right ear (H Kitty Style!)
+            // Left loop
+            val bowLeft = Path().apply {
+                addOval(Rect(w * 0.64f, h * 0.24f, w * 0.74f, h * 0.34f))
+            }
+            // Right loop
+            val bowRight = Path().apply {
+                addOval(Rect(w * 0.78f, h * 0.24f, w * 0.88f, h * 0.34f))
+            }
+            drawPath(path = bowLeft, color = Color(0xFFFFB2BC))
+            drawPath(path = bowLeft, color = Color.Black, style = Stroke(width = 1.6f))
+            drawPath(path = bowRight, color = Color(0xFFFFB2BC))
+            drawPath(path = bowRight, color = Color.Black, style = Stroke(width = 1.6f))
+
+            // Center knot
+            drawCircle(color = Color(0xFFFFB2BC), radius = 2.8f, center = Offset(w * 0.76f, h * 0.29f))
+            drawCircle(color = Color.Black, radius = 2.8f, center = Offset(w * 0.76f, h * 0.29f), style = Stroke(width = 1.6f))
+        }
+    }
+
+    @Composable
+    fun KittyShiftIcon(
+        modifier: Modifier = Modifier,
+        size: Dp = 24.dp,
+        isShifted: Boolean = false
+    ) {
+        Canvas(modifier = modifier.size(size)) {
+            val w = this.size.width
+            val h = this.size.height
+
+            // A cute bow or arrow pointing up
+            val arrowPath = Path().apply {
+                moveTo(w * 0.5f, h * 0.15f)
+                lineTo(w * 0.15f, h * 0.55f)
+                lineTo(w * 0.38f, h * 0.55f)
+                lineTo(w * 0.38f, h * 0.85f)
+                lineTo(w * 0.62f, h * 0.85f)
+                lineTo(w * 0.62f, h * 0.55f)
+                lineTo(w * 0.85f, h * 0.55f)
+                close()
+            }
+            
+            drawPath(path = arrowPath, color = if (isShifted) Color(0xFFFFB2BC) else Color.White)
+            drawPath(path = arrowPath, color = Color.Black, style = Stroke(width = 2.2f))
+        }
+    }
+
+    @Composable
+    fun KittyBackspaceIcon(
+        modifier: Modifier = Modifier,
+        size: Dp = 24.dp
+    ) {
+        Canvas(modifier = modifier.size(size)) {
+            val w = this.size.width
+            val h = this.size.height
+            val tagPath = Path().apply {
+                moveTo(w * 0.15f, h * 0.5f)
+                lineTo(w * 0.40f, h * 0.20f)
+                lineTo(w * 0.85f, h * 0.20f)
+                lineTo(w * 0.85f, h * 0.80f)
+                lineTo(w * 0.40f, h * 0.80f)
+                close()
+            }
+            drawPath(path = tagPath, color = Color.White)
+            drawPath(path = tagPath, color = Color.Black, style = Stroke(width = 2.2f))
+
+            // Pink 'X' inside
+            drawLine(
+                color = Color(0xFFFFB2BC),
+                start = Offset(w * 0.50f, h * 0.38f),
+                end = Offset(w * 0.72f, h * 0.62f),
+                strokeWidth = 2.2f
+            )
+            drawLine(
+                color = Color(0xFFFFB2BC),
+                start = Offset(w * 0.72f, h * 0.38f),
+                end = Offset(w * 0.50f, h * 0.62f),
+                strokeWidth = 2.2f
+            )
+            // Black thin outline on 'X'
+            drawLine(
+                color = Color.Black,
+                start = Offset(w * 0.50f, h * 0.38f),
+                end = Offset(w * 0.72f, h * 0.62f),
+                strokeWidth = 1.0f
+            )
+            drawLine(
+                color = Color.Black,
+                start = Offset(w * 0.72f, h * 0.38f),
+                end = Offset(w * 0.50f, h * 0.62f),
+                strokeWidth = 1.0f
             )
         }
     }

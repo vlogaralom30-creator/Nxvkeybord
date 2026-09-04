@@ -9,6 +9,11 @@ import android.inputmethodservice.InputMethodService
 import android.text.InputType
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +49,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class NXVInputMethodService : InputMethodService(),
@@ -70,6 +76,7 @@ class NXVInputMethodService : InputMethodService(),
     private var currentMode by mutableStateOf(KeyboardMode.ENGLISH)
     private var shiftState by mutableStateOf(ShiftState.LOWERCASE)
     private var enterActionLabel by mutableStateOf("↵")
+    private val isKeyboardVisibleState = MutableStateFlow(true)
 
     // Shift double-tap detection
     private var lastShiftTapTime = 0L
@@ -167,6 +174,7 @@ class NXVInputMethodService : InputMethodService(),
 
     override fun onWindowShown() {
         super.onWindowShown()
+        isKeyboardVisibleState.value = true
         syncSystemClipboard()
         if (!lifecycleRegistry.currentState.isAtLeast(Lifecycle.State.STARTED)) {
             lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
@@ -178,6 +186,22 @@ class NXVInputMethodService : InputMethodService(),
         super.onWindowHidden()
         if (lifecycleRegistry.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
             lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+        }
+    }
+
+    private var isHiding = false
+
+    override fun hideWindow() {
+        if (isHiding) {
+            super.hideWindow()
+            return
+        }
+        isHiding = true
+        serviceScope.launch {
+            isKeyboardVisibleState.value = false
+            delay(300L) // Let slide-down exit animation complete
+            super.hideWindow()
+            isHiding = false
         }
     }
 
@@ -208,8 +232,14 @@ class NXVInputMethodService : InputMethodService(),
                 val suggestions by suggestionsState.collectAsState()
                 val clipboardItems by clipboardItemsState.collectAsState()
                 val savedCredentials by savedCredentialsState.collectAsState()
+                val isKeyboardVisible by isKeyboardVisibleState.collectAsState()
 
-                KeyboardRootView(
+                AnimatedVisibility(
+                    visible = isKeyboardVisible,
+                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                ) {
+                    KeyboardRootView(
                     settings = settings,
                     currentMode = currentMode,
                     shiftState = shiftState,
@@ -360,6 +390,7 @@ class NXVInputMethodService : InputMethodService(),
                         }
                     }
                 )
+                }
             }
         }
 

@@ -7,19 +7,25 @@ import androidx.compose.ui.unit.dp
 enum class ThemeSpecialIconStyle {
     STANDARD,
     PUPPY_MINIMAL,
-    STRAWBERRY_DESSERT
+    STRAWBERRY_DESSERT,
+    KAWAII_KITTEN,
+    RETRO_MECH
 }
 
 enum class KeyPopupStyle {
     STANDARD,
     PUPPY_CHARACTER,
-    STRAWBERRY_SWEET
+    STRAWBERRY_SWEET,
+    KAWAII_KITTY_POPUP,
+    RETRO_MECH_POPUP
 }
 
 enum class SpacebarStyle {
     STANDARD_BAR,
     PUPPY_BRACKET,
-    STRAWBERRY_PILL
+    STRAWBERRY_PILL,
+    KITTY_PAW_BAR,
+    RETRO_MECH_SPACE
 }
 
 data class KeyboardPalette(
@@ -58,6 +64,78 @@ data class KeyboardPalette(
 )
 
 object KeyboardThemes {
+
+    // Retro Mech (Mechanical keyboard with 3D keycaps and cobalt/orange style) - Reference Image 2
+    val RetroMech = KeyboardPalette(
+        themeId = "retro_mech",
+        themeName = "Retro Mech",
+        themeDescription = "Premium mechanical keyboard with custom 3D sculpted retro keycaps, bold cobalt letters, and rich signal-orange action accents",
+        category = "Featured & 3D",
+        keyboardBackground = Color(0xFF1E2B34), // Slate-navy matte casing
+        keyBackground = Color(0xFFFFFFFF), // Creamy white keycap face
+        keyPressedBackground = Color(0xFFE5EAEE), // Slightly depressed keycap face
+        keyActionBackground = Color(0xFF223F53), // Slate-blue-grey modifiers
+        textColor = Color(0xFF0F448C), // Cobalt blue keycap legends
+        secondaryTextColor = Color(0xFF53748B), // Slate-blue secondary hints
+        accentColor = Color(0xFFE5523D), // Vivid signal orange-red action caps
+        onAccentColor = Color(0xFFFFFFFF), // Crisp white on signal orange
+        suggestionBarBackground = Color(0xFF162128), // Sleek matching dark header
+        suggestionHighlightColor = Color(0xFFE5523D),
+        dividerColor = Color(0x22FFFFFF),
+        keyBorderColor = Color(0xFFB0BDC6), // Bevel stroke highlight
+        keyBorderWidth = 0.dp, // Drawn custom using high-fidelity canvas
+        keyCornerRadius = 8.dp, // Mechanical boxy look
+        keyElevation = 4.dp,
+        pressedElevation = 1.dp,
+        specialIconStyle = ThemeSpecialIconStyle.RETRO_MECH,
+        popupStyle = KeyPopupStyle.RETRO_MECH_POPUP,
+        spacebarStyle = SpacebarStyle.RETRO_MECH_SPACE,
+        spacebarWatermark = null,
+        showTopRowHints = true,
+        topRowHintColor = Color(0xFF4C6E85),
+        previewColors = listOf(
+            Color(0xFF1E2B34),
+            Color(0xFFFFFFFF),
+            Color(0xFF223F53),
+            Color(0xFFE5523D)
+        )
+    )
+
+    // Kawaii Kitten (Cute Pink & White, Kitty Elements) - Reference Image
+    val KawaiiKitten = KeyboardPalette(
+        themeId = "kawaii_kitten",
+        themeName = "Kawaii Kitten",
+        themeDescription = "Adorable pastel pink & white keyboard featuring a cute kitten and sweet paw prints",
+        category = "Illustrated & Cute",
+        keyboardBackground = Color(0xFFE4E5EB), // Soft lavender/gray background
+        keyBackground = Color(0xFFFFFFFF), // Pure white alphabet keys
+        keyPressedBackground = Color(0xFFFFD1D6), // Soft rose pink keypress
+        keyActionBackground = Color(0xFFFFE3E6), // Pastel pink action keys
+        textColor = Color(0xFF000000), // Bold black typography
+        secondaryTextColor = Color(0xFF666666),
+        accentColor = Color(0xFFFFB2BC), // Lovely soft pink accents
+        onAccentColor = Color(0xFF000000),
+        suggestionBarBackground = Color(0xFFF1F2F6),
+        suggestionHighlightColor = Color(0xFFFFB2BC),
+        dividerColor = Color(0xFFDCDDE1),
+        keyBorderColor = Color(0x22000000),
+        keyBorderWidth = 1.dp,
+        keyCornerRadius = 10.dp,
+        keyElevation = 2.dp,
+        pressedElevation = 0.5.dp,
+        specialIconStyle = ThemeSpecialIconStyle.KAWAII_KITTEN,
+        popupStyle = KeyPopupStyle.KAWAII_KITTY_POPUP,
+        spacebarStyle = SpacebarStyle.KITTY_PAW_BAR,
+        spacebarWatermark = null,
+        showTopRowHints = true,
+        topRowHintColor = Color(0xFF888888),
+        previewColors = listOf(
+            Color(0xFFE4E5EB),
+            Color(0xFFFFFFFF),
+            Color(0xFFFFE3E6),
+            Color(0xFF000000)
+        )
+    )
 
     // 1. Puppy Pop (3D Neumorphic White with Puppy Popup) - Reference Image 1
     val PuppyPop = KeyboardPalette(
@@ -250,6 +328,8 @@ object KeyboardThemes {
     )
 
     val ALL_THEMES: List<KeyboardPalette> = listOf(
+        RetroMech,
+        KawaiiKitten,
         PuppyPop,
         StrawberryDessert,
         GeometricBalance,
@@ -260,6 +340,8 @@ object KeyboardThemes {
 
     fun getPalette(themeName: String): KeyboardPalette {
         return when (themeName.lowercase()) {
+            "retro_mech", "retromech", "retro", "mechanical", "mech" -> RetroMech
+            "kawaii_kitten", "kawaiikitten", "kitten", "kitty", "cute_kitty" -> KawaiiKitten
             "puppy_pop", "puppypop", "puppy", "puppy_white" -> PuppyPop
             "strawberry_dessert", "strawberry", "dessert", "strawberry_pink" -> StrawberryDessert
             "geometric", "geometric_balance", "dark" -> GeometricBalance

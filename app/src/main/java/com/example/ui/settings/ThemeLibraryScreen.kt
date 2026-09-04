@@ -82,10 +82,10 @@ fun ThemeLibraryScreen(
     val allThemes = KeyboardThemes.ALL_THEMES
     val filteredThemes = remember(selectedCategory) {
         when (selectedCategory) {
-            "Featured & 3D" -> allThemes.filter { it.themeId in listOf("puppy_pop", "strawberry_dessert") }
-            "Dark & AMOLED" -> allThemes.filter { it.themeId in listOf("geometric", "amoled", "custom") }
-            "Light & Clean" -> allThemes.filter { it.themeId in listOf("puppy_pop", "light", "strawberry_dessert") }
-            "Aesthetic" -> allThemes.filter { it.themeId in listOf("puppy_pop", "strawberry_dessert", "custom") }
+            "Featured & 3D" -> allThemes.filter { it.themeId in listOf("retro_mech", "puppy_pop", "strawberry_dessert", "kawaii_kitten") }
+            "Dark & AMOLED" -> allThemes.filter { it.themeId in listOf("retro_mech", "geometric", "amoled", "custom") }
+            "Light & Clean" -> allThemes.filter { it.themeId in listOf("puppy_pop", "light", "strawberry_dessert", "kawaii_kitten") }
+            "Aesthetic" -> allThemes.filter { it.themeId in listOf("retro_mech", "puppy_pop", "strawberry_dessert", "custom", "kawaii_kitten") }
             else -> allThemes
         }
     }
