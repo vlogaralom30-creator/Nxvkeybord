@@ -8,7 +8,27 @@ enum class KeyboardMode {
     SYMBOLS,
     EMOJI,
     CLIPBOARD,
-    VAULT
+    VAULT,
+    TEXT_EDIT,
+    NUMBER_PAD
+}
+
+enum class OneHandedMode(val modeKey: String) {
+    NORMAL("none"),
+    LEFT("left"),
+    RIGHT("right");
+
+    val isOneHanded: Boolean get() = this != NORMAL
+    val isLeft: Boolean get() = this == LEFT
+    val isRight: Boolean get() = this == RIGHT
+
+    companion object {
+        fun fromString(str: String?): OneHandedMode = when (str?.lowercase()) {
+            "left" -> LEFT
+            "right" -> RIGHT
+            else -> NORMAL
+        }
+    }
 }
 
 enum class ShiftState {

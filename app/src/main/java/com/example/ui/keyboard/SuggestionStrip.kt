@@ -28,6 +28,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Dialpad
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Language
@@ -81,6 +83,8 @@ fun SuggestionStrip(
     onClipboardClick: () -> Unit,
     onQuickPaste: ((String) -> Unit)? = null,
     onVaultClick: () -> Unit = {},
+    onTextEditClick: () -> Unit = {},
+    onNumberPadClick: () -> Unit = {},
     onThemesClick: () -> Unit = {},
     onToggleVibration: () -> Unit = {},
     onToggleSound: () -> Unit = {},
@@ -339,7 +343,25 @@ fun SuggestionStrip(
                             onClick = onClipboardClick
                         )
 
-                        // 2. Password Vault Action
+                        // 2. Text Edit Pad Action
+                        ActionToolChip(
+                            icon = Icons.Default.Edit,
+                            label = "Text Edit",
+                            palette = palette,
+                            tag = "toolbar_text_edit",
+                            onClick = onTextEditClick
+                        )
+
+                        // 3. Dialer / Numpad Action
+                        ActionToolChip(
+                            icon = Icons.Default.Dialpad,
+                            label = "Numpad",
+                            palette = palette,
+                            tag = "toolbar_numpad",
+                            onClick = onNumberPadClick
+                        )
+
+                        // 4. Password Vault Action
                         ActionToolChip(
                             icon = Icons.Default.Lock,
                             label = "Vault",

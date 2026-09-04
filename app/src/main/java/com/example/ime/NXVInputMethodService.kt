@@ -277,6 +277,15 @@ class NXVInputMethodService : InputMethodService(),
                             app.repository.togglePinCredential(cred)
                         }
                     },
+                    onMoveCursorUp = { isSelecting -> inputConnectionManager.moveCursorUp(isSelecting) },
+                    onMoveCursorDown = { isSelecting -> inputConnectionManager.moveCursorDown(isSelecting) },
+                    onMoveCursorLeft = { isSelecting -> inputConnectionManager.moveCursorLeft(isSelecting) },
+                    onMoveCursorRight = { isSelecting -> inputConnectionManager.moveCursorRight(isSelecting) },
+                    onMoveToStartOfLine = { isSelecting -> inputConnectionManager.moveToStartOfLine(isSelecting) },
+                    onMoveToEndOfLine = { isSelecting -> inputConnectionManager.moveToEndOfLine(isSelecting) },
+                    onSelectAll = { inputConnectionManager.selectAll() },
+                    onCopyText = { inputConnectionManager.copyText() },
+                    onPasteText = { inputConnectionManager.pasteText() },
                     onOpenSettings = {
                         val intent = Intent(this@NXVInputMethodService, MainActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -306,6 +315,42 @@ class NXVInputMethodService : InputMethodService(),
                         serviceScope.launch {
                             val app = application as? NXVApplication ?: NXVApplication.instance
                             app.preferences.updateOneHandedMode(mode)
+                        }
+                    },
+                    onUpdateOneHandedHeightDp = { height ->
+                        serviceScope.launch {
+                            val app = application as? NXVApplication ?: NXVApplication.instance
+                            app.preferences.updateOneHandedHeightDp(height)
+                        }
+                    },
+                    onUpdateOneHandedTheme = { theme ->
+                        serviceScope.launch {
+                            val app = application as? NXVApplication ?: NXVApplication.instance
+                            app.preferences.updateOneHandedTheme(theme)
+                        }
+                    },
+                    onUpdateOneHandedRotateText = { rotate ->
+                        serviceScope.launch {
+                            val app = application as? NXVApplication ?: NXVApplication.instance
+                            app.preferences.updateOneHandedRotateText(rotate)
+                        }
+                    },
+                    onUpdateOneHandedArcScale = { scale ->
+                        serviceScope.launch {
+                            val app = application as? NXVApplication ?: NXVApplication.instance
+                            app.preferences.updateOneHandedArcScale(scale)
+                        }
+                    },
+                    onUpdateOneHandedShowSuggestions = { show ->
+                        serviceScope.launch {
+                            val app = application as? NXVApplication ?: NXVApplication.instance
+                            app.preferences.updateOneHandedShowSuggestions(show)
+                        }
+                    },
+                    onUpdateOneHandedKeyStyle = { style ->
+                        serviceScope.launch {
+                            val app = application as? NXVApplication ?: NXVApplication.instance
+                            app.preferences.updateOneHandedKeyStyle(style)
                         }
                     }
                 )

@@ -24,6 +24,9 @@ fun BanglaKeyLayout(
     showLanguageKey: Boolean = true,
     showKeySubLabels: Boolean = true,
     popupMode: String = "popup",
+    onHoldProgressUpdate: ((Float) -> Unit)? = null,
+    onFiveSecondHoldComplete: (() -> Unit)? = null,
+    onHoldCancelled: (() -> Unit)? = null,
     onCharTyped: (String) -> Unit,
     onDelete: () -> Unit,
     onSpace: () -> Unit,
@@ -55,6 +58,9 @@ fun BanglaKeyLayout(
                     palette = palette,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -73,6 +79,9 @@ fun BanglaKeyLayout(
                     palette = palette,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -91,6 +100,9 @@ fun BanglaKeyLayout(
                     palette = palette,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -122,6 +134,9 @@ fun BanglaKeyLayout(
                     palette = palette,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -199,7 +214,8 @@ fun BanglaKeyLayout(
                 showSubLabel = showKeySubLabels,
                 popupMode = popupMode,
                 onHorizontalDrag = onSpaceDrag,
-                onTap = { onSpace() }
+                onTap = { onSpace() },
+                onLongPress = { onLongPressLanguage() }
             )
 
             KeyboardKeyView(

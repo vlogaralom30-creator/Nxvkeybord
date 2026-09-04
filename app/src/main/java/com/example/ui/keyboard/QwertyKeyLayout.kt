@@ -34,6 +34,9 @@ fun QwertyKeyLayout(
     showLanguageKey: Boolean = true,
     showKeySubLabels: Boolean = true,
     popupMode: String = "popup",
+    onHoldProgressUpdate: ((Float) -> Unit)? = null,
+    onFiveSecondHoldComplete: (() -> Unit)? = null,
+    onHoldCancelled: (() -> Unit)? = null,
     onCharTyped: (String) -> Unit,
     onDelete: () -> Unit,
     onSpace: () -> Unit,
@@ -97,6 +100,9 @@ fun QwertyKeyLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) },
                     onLongPress = { alt?.let { onCharTyped(it) } }
                 )
@@ -121,6 +127,9 @@ fun QwertyKeyLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) },
                     onLongPress = { alt?.let { onCharTyped(it) } }
                 )
@@ -169,6 +178,9 @@ fun QwertyKeyLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) },
                     onLongPress = { alt?.let { onCharTyped(it) } }
                 )
@@ -253,7 +265,8 @@ fun QwertyKeyLayout(
                 showSubLabel = showKeySubLabels,
                 popupMode = popupMode,
                 onHorizontalDrag = onSpaceDrag,
-                onTap = { onSpace() }
+                onTap = { onSpace() },
+                onLongPress = { onLongPressLanguage() }
             )
 
             // Punctuation (comma/period/dari)

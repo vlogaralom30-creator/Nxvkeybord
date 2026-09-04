@@ -261,6 +261,73 @@ class InputConnectionManager {
         }
     }
 
+    fun moveCursorUp(select: Boolean = false) {
+        val ic = inputConnection ?: return
+        sendDirectionKey(ic, KeyEvent.KEYCODE_DPAD_UP, select)
+    }
+
+    fun moveCursorDown(select: Boolean = false) {
+        val ic = inputConnection ?: return
+        sendDirectionKey(ic, KeyEvent.KEYCODE_DPAD_DOWN, select)
+    }
+
+    fun moveCursorLeft(select: Boolean = false) {
+        val ic = inputConnection ?: return
+        sendDirectionKey(ic, KeyEvent.KEYCODE_DPAD_LEFT, select)
+    }
+
+    fun moveCursorRight(select: Boolean = false) {
+        val ic = inputConnection ?: return
+        sendDirectionKey(ic, KeyEvent.KEYCODE_DPAD_RIGHT, select)
+    }
+
+    fun moveToStartOfLine(select: Boolean = false) {
+        val ic = inputConnection ?: return
+        sendDirectionKey(ic, KeyEvent.KEYCODE_MOVE_HOME, select)
+    }
+
+    fun moveToEndOfLine(select: Boolean = false) {
+        val ic = inputConnection ?: return
+        sendDirectionKey(ic, KeyEvent.KEYCODE_MOVE_END, select)
+    }
+
+    private fun sendDirectionKey(ic: InputConnection, keyCode: Int, select: Boolean) {
+        try {
+            val eventTime = android.os.SystemClock.uptimeMillis()
+            val metaState = if (select) KeyEvent.META_SHIFT_ON else 0
+            ic.sendKeyEvent(KeyEvent(eventTime, eventTime, KeyEvent.ACTION_DOWN, keyCode, 0, metaState))
+            ic.sendKeyEvent(KeyEvent(eventTime, eventTime, KeyEvent.ACTION_UP, keyCode, 0, metaState))
+        } catch (_: Exception) {}
+    }
+
+    fun selectAll() {
+        val ic = inputConnection ?: return
+        try {
+            ic.performContextMenuAction(android.R.id.selectAll)
+        } catch (_: Exception) {}
+    }
+
+    fun copyText() {
+        val ic = inputConnection ?: return
+        try {
+            ic.performContextMenuAction(android.R.id.copy)
+        } catch (_: Exception) {}
+    }
+
+    fun pasteText() {
+        val ic = inputConnection ?: return
+        try {
+            ic.performContextMenuAction(android.R.id.paste)
+        } catch (_: Exception) {}
+    }
+
+    fun cutText() {
+        val ic = inputConnection ?: return
+        try {
+            ic.performContextMenuAction(android.R.id.cut)
+        } catch (_: Exception) {}
+    }
+
     fun getTextBeforeCursor(length: Int = 100): String {
         val ic = inputConnection ?: return ""
         return ic.getTextBeforeCursor(length, 0)?.toString() ?: ""

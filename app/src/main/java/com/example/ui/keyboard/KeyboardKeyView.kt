@@ -75,6 +75,10 @@ fun KeyboardKeyView(
     height: Dp = 46.dp,
     palette: KeyboardPalette,
     showPreview: Boolean = true,
+    isAlphabeticKey: Boolean = label.length == 1 && (label[0].isLetter() || label[0].code > 128),
+    onHoldProgressUpdate: ((Float) -> Unit)? = null,
+    onFiveSecondHoldComplete: (() -> Unit)? = null,
+    onHoldCancelled: (() -> Unit)? = null,
     onHorizontalDrag: ((Float) -> Unit)? = null,
     onTap: () -> Unit,
     onLongPress: (() -> Unit)? = null
@@ -123,19 +127,31 @@ fun KeyboardKeyView(
         palette.keyBorderColor
     }
 
-    val gestureModifier = if (isSpaceBar && onHorizontalDrag != null) {
-        Modifier.pointerInput(onHorizontalDrag) {
+    val gestureModifier = if (isSpaceBar && (onHorizontalDrag != null || onLongPress != null)) {
+        Modifier.pointerInput(onHorizontalDrag, onLongPress) {
             awaitEachGesture {
                 val down = awaitFirstDown()
                 isPressed = true
                 var isDragging = false
+                var isLongPressed = false
                 val touchSlop = viewConfiguration.touchSlop
+                val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+
+                val longPressJob = coroutineScope.launch {
+                    delay(longPressTimeout)
+                    if (!isDragging) {
+                        isLongPressed = true
+                        onLongPress?.invoke()
+                    }
+                }
+
                 while (true) {
                     val event = awaitPointerEvent()
                     val change = event.changes.firstOrNull { it.id == down.id } ?: break
                     if (change.isConsumed) break
                     if (!change.pressed) {
-                        if (!isDragging) {
+                        longPressJob.cancel()
+                        if (!isDragging && !isLongPressed) {
                             onTap()
                         }
                         break
@@ -143,13 +159,63 @@ fun KeyboardKeyView(
                     val totalDist = kotlin.math.abs(change.position.x - down.position.x)
                     if (!isDragging && totalDist > touchSlop) {
                         isDragging = true
+                        longPressJob.cancel()
                     }
                     if (isDragging) {
                         val dx = change.positionChange().x
                         if (dx != 0f) {
                             change.consume()
-                            onHorizontalDrag(dx)
+                            onHorizontalDrag?.invoke(dx)
                         }
+                    }
+                }
+                isPressed = false
+            }
+        }
+    } else if (onFiveSecondHoldComplete != null && isAlphabeticKey) {
+        Modifier.pointerInput(label, isAlphabeticKey) {
+            awaitEachGesture {
+                val down = awaitFirstDown()
+                isPressed = true
+                var is5sCompleted = false
+                val startTime = System.currentTimeMillis()
+                val total5sMs = 5000L
+
+                val timerJob = coroutineScope.launch {
+                    val updateInterval = 50L
+                    var elapsed = 0L
+                    while (isActive && elapsed < total5sMs) {
+                        delay(updateInterval)
+                        elapsed += updateInterval
+                        if (elapsed >= 300L) {
+                            val progress = ((elapsed - 300L).toFloat() / (total5sMs - 300L)).coerceIn(0f, 1f)
+                            onHoldProgressUpdate?.invoke(progress)
+                        }
+                        if (elapsed >= total5sMs) {
+                            is5sCompleted = true
+                            onFiveSecondHoldComplete.invoke()
+                            onHoldCancelled?.invoke()
+                            break
+                        }
+                    }
+                }
+
+                while (true) {
+                    val event = awaitPointerEvent()
+                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                    if (!change.pressed) {
+                        timerJob.cancel()
+                        onHoldCancelled?.invoke()
+                        val pressDuration = System.currentTimeMillis() - startTime
+
+                        if (!is5sCompleted) {
+                            if (pressDuration < 450L) {
+                                onTap()
+                            } else {
+                                onLongPress?.invoke() ?: onTap()
+                            }
+                        }
+                        break
                     }
                 }
                 isPressed = false

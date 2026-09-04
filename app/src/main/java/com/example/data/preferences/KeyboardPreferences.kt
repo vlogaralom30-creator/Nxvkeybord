@@ -21,6 +21,13 @@ data class KeyboardSettings(
     val keyboardHeightRatio: Float = 1.0f,
     val showNumberRow: Boolean = false,
     val oneHandedMode: String = "none",
+    val preferredHand: String = "right",
+    val oneHandedHeightDp: Int = 330,
+    val oneHandedTheme: String = "theme_match",
+    val oneHandedRotateText: Boolean = true,
+    val oneHandedArcScale: Float = 1.0f,
+    val oneHandedShowSuggestions: Boolean = true,
+    val oneHandedKeyStyle: String = "clean_arc",
     val keySoundEnabled: Boolean = false,
     val keyVibrationEnabled: Boolean = true,
     val vibrationStrength: String = "medium",
@@ -45,6 +52,13 @@ class KeyboardPreferences(private val context: Context) {
         val KEY_HEIGHT_RATIO = floatPreferencesKey("keyboard_height_ratio")
         val KEY_SHOW_NUMBER_ROW = booleanPreferencesKey("show_number_row")
         val KEY_ONE_HANDED_MODE = stringPreferencesKey("one_handed_mode")
+        val KEY_PREFERRED_HAND = stringPreferencesKey("preferred_hand")
+        val KEY_ONE_HANDED_HEIGHT = floatPreferencesKey("one_handed_height_dp")
+        val KEY_ONE_HANDED_THEME = stringPreferencesKey("one_handed_theme")
+        val KEY_ONE_HANDED_ROTATE_TEXT = booleanPreferencesKey("one_handed_rotate_text")
+        val KEY_ONE_HANDED_ARC_SCALE = floatPreferencesKey("one_handed_arc_scale")
+        val KEY_ONE_HANDED_SHOW_SUGG = booleanPreferencesKey("one_handed_show_sugg")
+        val KEY_ONE_HANDED_KEY_STYLE = stringPreferencesKey("one_handed_key_style")
         val KEY_SOUND_ENABLED = booleanPreferencesKey("key_sound_enabled")
         val KEY_VIBRATION_ENABLED = booleanPreferencesKey("key_vibration_enabled")
         val KEY_VIBRATION_STRENGTH = stringPreferencesKey("vibration_strength")
@@ -68,6 +82,13 @@ class KeyboardPreferences(private val context: Context) {
             keyboardHeightRatio = prefs[KEY_HEIGHT_RATIO] ?: 1.0f,
             showNumberRow = prefs[KEY_SHOW_NUMBER_ROW] ?: false,
             oneHandedMode = prefs[KEY_ONE_HANDED_MODE] ?: "none",
+            preferredHand = prefs[KEY_PREFERRED_HAND] ?: "right",
+            oneHandedHeightDp = (prefs[KEY_ONE_HANDED_HEIGHT] ?: 330f).toInt(),
+            oneHandedTheme = prefs[KEY_ONE_HANDED_THEME] ?: "theme_match",
+            oneHandedRotateText = prefs[KEY_ONE_HANDED_ROTATE_TEXT] ?: true,
+            oneHandedArcScale = prefs[KEY_ONE_HANDED_ARC_SCALE] ?: 1.0f,
+            oneHandedShowSuggestions = prefs[KEY_ONE_HANDED_SHOW_SUGG] ?: true,
+            oneHandedKeyStyle = prefs[KEY_ONE_HANDED_KEY_STYLE] ?: "clean_arc",
             keySoundEnabled = prefs[KEY_SOUND_ENABLED] ?: false,
             keyVibrationEnabled = prefs[KEY_VIBRATION_ENABLED] ?: true,
             vibrationStrength = prefs[KEY_VIBRATION_STRENGTH] ?: "medium",
@@ -106,6 +127,34 @@ class KeyboardPreferences(private val context: Context) {
 
     suspend fun updateOneHandedMode(mode: String) {
         context.dataStore.edit { it[KEY_ONE_HANDED_MODE] = mode }
+    }
+
+    suspend fun updatePreferredHand(hand: String) {
+        context.dataStore.edit { it[KEY_PREFERRED_HAND] = hand }
+    }
+
+    suspend fun updateOneHandedHeightDp(heightDp: Int) {
+        context.dataStore.edit { it[KEY_ONE_HANDED_HEIGHT] = heightDp.toFloat() }
+    }
+
+    suspend fun updateOneHandedTheme(theme: String) {
+        context.dataStore.edit { it[KEY_ONE_HANDED_THEME] = theme }
+    }
+
+    suspend fun updateOneHandedRotateText(rotate: Boolean) {
+        context.dataStore.edit { it[KEY_ONE_HANDED_ROTATE_TEXT] = rotate }
+    }
+
+    suspend fun updateOneHandedArcScale(scale: Float) {
+        context.dataStore.edit { it[KEY_ONE_HANDED_ARC_SCALE] = scale }
+    }
+
+    suspend fun updateOneHandedShowSuggestions(show: Boolean) {
+        context.dataStore.edit { it[KEY_ONE_HANDED_SHOW_SUGG] = show }
+    }
+
+    suspend fun updateOneHandedKeyStyle(style: String) {
+        context.dataStore.edit { it[KEY_ONE_HANDED_KEY_STYLE] = style }
     }
 
     suspend fun updateSoundEnabled(enabled: Boolean) {

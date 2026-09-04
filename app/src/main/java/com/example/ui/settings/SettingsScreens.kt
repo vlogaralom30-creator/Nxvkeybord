@@ -60,6 +60,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -597,6 +598,11 @@ fun KeyboardPrefsScreen(
     onUpdateHeight: (Float) -> Unit,
     onUpdateNumberRow: (Boolean) -> Unit,
     onUpdateOneHanded: (String) -> Unit,
+    onUpdateOneHandedHeightDp: ((Int) -> Unit)? = null,
+    onUpdateOneHandedTheme: ((String) -> Unit)? = null,
+    onUpdateOneHandedRotateText: ((Boolean) -> Unit)? = null,
+    onUpdateOneHandedArcScale: ((Float) -> Unit)? = null,
+    onUpdateOneHandedShowSuggestions: ((Boolean) -> Unit)? = null,
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -740,24 +746,24 @@ fun KeyboardPrefsScreen(
                 )
             }
 
-            // One-Handed Mode
-            Text("One-Handed Mode", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            // One-Handed Mode Settings
+            Text("One-Handed Mode Options", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             val oneHandedOptions = listOf(
                 "none" to "Standard (Full Width)",
-                "left" to "Left-Handed Mode",
-                "right" to "Right-Handed Mode"
+                "left" to "Left-Handed Arc Keyboard",
+                "right" to "Right-Handed Arc Keyboard"
             )
             Card(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
             ) {
-                Column(modifier = Modifier.padding(8.dp)) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     oneHandedOptions.forEach { (modeId, modeName) ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onUpdateOneHanded(modeId) }
-                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                                .padding(horizontal = 4.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -765,7 +771,105 @@ fun KeyboardPrefsScreen(
                                 onClick = { onUpdateOneHanded(modeId) }
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = modeName, fontSize = 15.sp)
+                            Text(text = modeName, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+
+                    if (settings.oneHandedMode != "none") {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        // One-Handed Size (Height)
+                        Column {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Arc Keyboard Size (Height)", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                Text("${settings.oneHandedHeightDp}dp", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                            Slider(
+                                value = settings.oneHandedHeightDp.toFloat(),
+                                onValueChange = { onUpdateOneHandedHeightDp?.invoke(it.toInt()) },
+                                valueRange = 260f..380f,
+                                steps = 5
+                            )
+                        }
+
+                        // Arc Reach Scale
+                        Column {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Thumb Reach (Arc Scale)", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                Text("${(settings.oneHandedArcScale * 100).toInt()}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                            Slider(
+                                value = settings.oneHandedArcScale,
+                                onValueChange = { onUpdateOneHandedArcScale?.invoke(it) },
+                                valueRange = 0.80f..1.25f,
+                                steps = 8
+                            )
+                        }
+
+                        // Theme Selection for Arc Keyboard
+                        Text("Arc Color Style", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        val arcThemes = listOf(
+                            "theme_match" to "Keyboard Match",
+                            "light_crisp" to "Light Crisp",
+                            "amoled_dark" to "AMOLED Dark",
+                            "rose_pastel" to "Rose Pastel",
+                            "sky_cyan" to "Sky Cyan"
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            arcThemes.forEach { (tId, tName) ->
+                                val isSel = settings.oneHandedTheme == tId
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
+                                        .clickable { onUpdateOneHandedTheme?.invoke(tId) }
+                                        .padding(vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = tName,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+
+                        // Rotate Text Switch
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Rotate Text Along Arc", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                Text(if (settings.oneHandedRotateText) "Text follows arc angle" else "Text stays upright", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(
+                                checked = settings.oneHandedRotateText,
+                                onCheckedChange = { onUpdateOneHandedRotateText?.invoke(it) }
+                            )
+                        }
+
+                        // Predictive Suggestions Switch
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Predictive Word Bubbles", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                Text("Circular pills for word suggestions", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(
+                                checked = settings.oneHandedShowSuggestions,
+                                onCheckedChange = { onUpdateOneHandedShowSuggestions?.invoke(it) }
+                            )
                         }
                     }
                 }

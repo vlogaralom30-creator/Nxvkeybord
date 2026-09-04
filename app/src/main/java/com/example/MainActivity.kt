@@ -166,6 +166,21 @@ class MainActivity : ComponentActivity() {
                                     onUpdateOneHanded = { mode ->
                                         scope.launch { app.preferences.updateOneHandedMode(mode) }
                                     },
+                                    onUpdateOneHandedHeightDp = { height ->
+                                        scope.launch { app.preferences.updateOneHandedHeightDp(height) }
+                                    },
+                                    onUpdateOneHandedTheme = { theme ->
+                                        scope.launch { app.preferences.updateOneHandedTheme(theme) }
+                                    },
+                                    onUpdateOneHandedRotateText = { rotate ->
+                                        scope.launch { app.preferences.updateOneHandedRotateText(rotate) }
+                                    },
+                                    onUpdateOneHandedArcScale = { scale ->
+                                        scope.launch { app.preferences.updateOneHandedArcScale(scale) }
+                                    },
+                                    onUpdateOneHandedShowSuggestions = { show ->
+                                        scope.launch { app.preferences.updateOneHandedShowSuggestions(show) }
+                                    },
                                     onBack = { currentScreen = SettingsScreen.HOME }
                                 )
                             }

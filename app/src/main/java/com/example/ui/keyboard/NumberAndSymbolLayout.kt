@@ -184,7 +184,8 @@ fun NumberAndSymbolLayout(
                 showSubLabel = showKeySubLabels,
                 popupMode = popupMode,
                 onHorizontalDrag = onSpaceDrag,
-                onTap = { onSpace() }
+                onTap = { onSpace() },
+                onLongPress = { onLongPressLanguage() }
             )
 
             KeyboardKeyView(
