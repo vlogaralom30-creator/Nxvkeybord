@@ -24,6 +24,7 @@ fun NumberAndSymbolLayout(
     onCharTyped: (String) -> Unit,
     onDelete: () -> Unit,
     onSpace: () -> Unit,
+    onSpaceDrag: ((Float) -> Unit)? = null,
     onEnter: () -> Unit,
     onSwitchMode: (KeyboardMode) -> Unit,
     onTogglePage: () -> Unit,
@@ -150,6 +151,7 @@ fun NumberAndSymbolLayout(
                 isSpaceBar = true,
                 height = keyHeight,
                 palette = palette,
+                onHorizontalDrag = onSpaceDrag,
                 onTap = { onSpace() }
             )
 

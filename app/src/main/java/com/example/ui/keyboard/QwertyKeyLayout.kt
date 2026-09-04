@@ -28,6 +28,7 @@ fun QwertyKeyLayout(
     onCharTyped: (String) -> Unit,
     onDelete: () -> Unit,
     onSpace: () -> Unit,
+    onSpaceDrag: ((Float) -> Unit)? = null,
     onEnter: () -> Unit,
     onShift: () -> Unit,
     onSwitchMode: (KeyboardMode) -> Unit,
@@ -109,7 +110,7 @@ fun QwertyKeyLayout(
             val shiftIcon = when (shiftState) {
                 ShiftState.LOWERCASE -> "⇧"
                 ShiftState.SHIFT_ONCE -> "⬆"
-                ShiftState.CAPS_LOCK -> "⇪"
+                ShiftState.CAPS_LOCK, ShiftState.MANUAL_UPPERCASE -> "⇪"
             }
             KeyboardKeyView(
                 label = shiftIcon,
@@ -190,6 +191,7 @@ fun QwertyKeyLayout(
                 isSpaceBar = true,
                 height = keyHeight,
                 palette = palette,
+                onHorizontalDrag = onSpaceDrag,
                 onTap = { onSpace() }
             )
 

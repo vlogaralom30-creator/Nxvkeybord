@@ -23,6 +23,7 @@ fun BanglaKeyLayout(
     onCharTyped: (String) -> Unit,
     onDelete: () -> Unit,
     onSpace: () -> Unit,
+    onSpaceDrag: ((Float) -> Unit)? = null,
     onEnter: () -> Unit,
     onShift: () -> Unit,
     onSwitchMode: (KeyboardMode) -> Unit,
@@ -163,6 +164,7 @@ fun BanglaKeyLayout(
                 isSpaceBar = true,
                 height = keyHeight,
                 palette = palette,
+                onHorizontalDrag = onSpaceDrag,
                 onTap = { onSpace() }
             )
 

@@ -4,7 +4,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -49,6 +52,7 @@ fun KeyboardKeyView(
     height: Dp = 46.dp,
     palette: KeyboardPalette,
     showPreview: Boolean = false,
+    onHorizontalDrag: ((Float) -> Unit)? = null,
     onTap: () -> Unit,
     onLongPress: (() -> Unit)? = null
 ) {
@@ -82,6 +86,88 @@ fun KeyboardKeyView(
         else -> palette.textColor
     }
 
+    val gestureModifier = if (isSpaceBar && onHorizontalDrag != null) {
+        Modifier.pointerInput(onHorizontalDrag) {
+            awaitEachGesture {
+                val down = awaitFirstDown()
+                isPressed = true
+                var isDragging = false
+                val touchSlop = viewConfiguration.touchSlop
+                while (true) {
+                    val event = awaitPointerEvent()
+                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                    if (change.isConsumed) break
+                    if (!change.pressed) {
+                        if (!isDragging) {
+                            onTap()
+                        }
+                        break
+                    }
+                    val totalDist = kotlin.math.abs(change.position.x - down.position.x)
+                    if (!isDragging && totalDist > touchSlop) {
+                        isDragging = true
+                    }
+                    if (isDragging) {
+                        val dx = change.positionChange().x
+                        if (dx != 0f) {
+                            change.consume()
+                            onHorizontalDrag(dx)
+                        }
+                    }
+                }
+                isPressed = false
+            }
+        }
+    } else {
+        Modifier.pointerInput(isRepeatable) {
+            detectTapGestures(
+                onPress = {
+                    isPressed = true
+                    if (isRepeatable) {
+                        onTap()
+                        val repeatJob = coroutineScope.launch {
+                            delay(380L)
+                            var currentDelay = 65L
+                            var holdDuration = 0L
+                            while (isActive) {
+                                onTap()
+                                delay(currentDelay)
+                                holdDuration += currentDelay
+                                if (holdDuration > 1400L) {
+                                    currentDelay = 35L
+                                } else if (holdDuration > 700L) {
+                                    currentDelay = 50L
+                                }
+                            }
+                        }
+                        try {
+                            tryAwaitRelease()
+                        } finally {
+                            repeatJob.cancel()
+                            isPressed = false
+                        }
+                    } else {
+                        try {
+                            tryAwaitRelease()
+                        } finally {
+                            isPressed = false
+                        }
+                    }
+                },
+                onTap = {
+                    if (!isRepeatable) {
+                        onTap()
+                    }
+                },
+                onLongPress = {
+                    if (!isRepeatable) {
+                        onLongPress?.invoke() ?: onTap()
+                    }
+                }
+            )
+        }
+    }
+
     Box(
         modifier = modifier
             .padding(horizontal = 2.dp, vertical = 2.5.dp)
@@ -99,59 +185,7 @@ fun KeyboardKeyView(
                 color = if (isPrimaryAction || isCapsLock) Color.Transparent else palette.dividerColor.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(8.dp)
             )
-            .pointerInput(isRepeatable) {
-                detectTapGestures(
-                    onPress = {
-                        isPressed = true
-                        if (isRepeatable) {
-                            // Immediate execution for responsive first tap
-                            onTap()
-
-                            // Coroutine job for continuous repeating while key remains held
-                            val repeatJob = coroutineScope.launch {
-                                delay(380L) // Initial threshold before continuous repetition starts
-                                var currentDelay = 65L
-                                var holdDuration = 0L
-                                while (isActive) {
-                                    onTap()
-                                    delay(currentDelay)
-                                    holdDuration += currentDelay
-                                    // Smoothly accelerate deletion speed when holding longer
-                                    if (holdDuration > 1400L) {
-                                        currentDelay = 35L
-                                    } else if (holdDuration > 700L) {
-                                        currentDelay = 50L
-                                    }
-                                }
-                            }
-                            try {
-                                tryAwaitRelease()
-                            } finally {
-                                // Stop immediately on release or gesture cancellation - no background deletion
-                                repeatJob.cancel()
-                                isPressed = false
-                            }
-                        } else {
-                            try {
-                                tryAwaitRelease()
-                            } finally {
-                                isPressed = false
-                            }
-                        }
-                    },
-                    onTap = {
-                        // For non-repeatable keys, handle standard tap
-                        if (!isRepeatable) {
-                            onTap()
-                        }
-                    },
-                    onLongPress = {
-                        if (!isRepeatable) {
-                            onLongPress?.invoke() ?: onTap()
-                        }
-                    }
-                )
-            }
+            .then(gestureModifier)
             .testTag("key_$label"),
         contentAlignment = Alignment.Center
     ) {

@@ -92,6 +92,13 @@ class NXVInputMethodService : InputMethodService(),
     // Avro composing buffer
     private val avroRawBuffer = StringBuilder()
 
+    // Spacebar cursor navigation state
+    private var accumulatedCursorDrag = 0f
+    private val cursorStepPx = 28f
+
+    // Context tracking for bigram predictions
+    private var lastCommittedWord: String? = null
+
     private var clipboardManager: ClipboardManager? = null
     private val clipChangedListener = ClipboardManager.OnPrimaryClipChangedListener {
         syncSystemClipboard()
@@ -104,7 +111,7 @@ class NXVInputMethodService : InputMethodService(),
 
         feedbackManager = FeedbackManager(this)
         val app = application as? NXVApplication ?: NXVApplication.instance
-        suggestionEngine = SuggestionEngine(app.repository)
+        suggestionEngine = SuggestionEngine(app.repository, this)
 
         // Initialize ClipboardManager listener to capture copied text fragments
         clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
@@ -215,6 +222,7 @@ class NXVInputMethodService : InputMethodService(),
                     onCharTyped = { char -> handleCharTyped(char) },
                     onDelete = { handleDelete() },
                     onSpace = { handleSpace() },
+                    onSpaceDrag = { delta -> handleSpaceDrag(delta) },
                     onEnter = { handleEnter() },
                     onShiftToggle = { handleShiftToggle() },
                     onModeSwitch = { mode ->
@@ -395,19 +403,31 @@ class NXVInputMethodService : InputMethodService(),
 
     private fun updateModeForLanguage(lang: String) {
         currentMode = when (lang.lowercase()) {
-            "bangla" -> KeyboardMode.BANGLA
+            "bangla" -> {
+                if (shiftState == ShiftState.SHIFT_ONCE) {
+                    shiftState = ShiftState.LOWERCASE
+                }
+                KeyboardMode.BANGLA
+            }
             "avro" -> KeyboardMode.AVRO
             else -> KeyboardMode.ENGLISH
+        }
+    }
+
+    fun handleSpaceDrag(dragAmountX: Float) {
+        commitAvroBuffer()
+        accumulatedCursorDrag += dragAmountX
+        val steps = (accumulatedCursorDrag / cursorStepPx).toInt()
+        if (steps != 0) {
+            inputConnectionManager.moveCursor(steps)
+            accumulatedCursorDrag -= steps * cursorStepPx
         }
     }
 
     private fun handleCharTyped(char: String) {
         val isLetter = char.length == 1 && char[0].isLetter()
         val effectiveChar = if (isLetter) {
-            when (shiftState) {
-                ShiftState.LOWERCASE -> char.lowercase()
-                ShiftState.SHIFT_ONCE, ShiftState.CAPS_LOCK -> char.uppercase()
-            }
+            if (shiftState.isUppercase) char.uppercase() else char.lowercase()
         } else {
             char
         }
@@ -434,7 +454,7 @@ class NXVInputMethodService : InputMethodService(),
 
         // Single tap shift returns to LOWERCASE only after typing an alphabetic letter.
         // Numbers, symbols, punctuation and emoji do NOT change shift state.
-        // CAPS_LOCK remains active until explicitly toggled off.
+        // CAPS_LOCK and MANUAL_UPPERCASE remain active until explicitly toggled off.
         if (isLetter && shiftState == ShiftState.SHIFT_ONCE) {
             shiftState = ShiftState.LOWERCASE
             lastShiftTapTime = 0L
@@ -463,10 +483,21 @@ class NXVInputMethodService : InputMethodService(),
 
     private fun handleSpace() {
         if (currentMode == KeyboardMode.AVRO && avroRawBuffer.isNotEmpty()) {
-            val converted = avroEngine.convertWord(avroRawBuffer.toString())
+            val raw = avroRawBuffer.toString()
+            val converted = avroEngine.convertWord(raw)
             inputConnectionManager.finishComposing(converted)
             learnWord(converted, "bn")
+            suggestionEngine.nextWordPredictor.recordBigram(lastCommittedWord, converted)
+            lastCommittedWord = converted
             avroRawBuffer.clear()
+        } else {
+            val currentWord = inputConnectionManager.getCurrentWordBeforeCursor()
+            if (currentWord.isNotEmpty()) {
+                val locale = if (currentMode == KeyboardMode.ENGLISH) "en" else "bn"
+                learnWord(currentWord, locale)
+                suggestionEngine.nextWordPredictor.recordBigram(lastCommittedWord, currentWord)
+                lastCommittedWord = currentWord
+            }
         }
 
         inputConnectionManager.commitText(" ")
@@ -475,9 +506,12 @@ class NXVInputMethodService : InputMethodService(),
 
     private fun handleEnter() {
         if (currentMode == KeyboardMode.AVRO && avroRawBuffer.isNotEmpty()) {
-            val converted = avroEngine.convertWord(avroRawBuffer.toString())
+            val raw = avroRawBuffer.toString()
+            val converted = avroEngine.convertWord(raw)
             inputConnectionManager.finishComposing(converted)
             learnWord(converted, "bn")
+            suggestionEngine.nextWordPredictor.recordBigram(lastCommittedWord, converted)
+            lastCommittedWord = converted
             avroRawBuffer.clear()
         }
         checkAndOfferPasswordSave()
@@ -534,12 +568,16 @@ class NXVInputMethodService : InputMethodService(),
                     ShiftState.LOWERCASE
                 }
             }
-            ShiftState.CAPS_LOCK -> {
-                // Tapping Shift again disables Caps Lock
+            ShiftState.CAPS_LOCK, ShiftState.MANUAL_UPPERCASE -> {
+                // Tapping Shift again disables Caps Lock / Manual Uppercase
                 lastShiftTapTime = 0L
                 ShiftState.LOWERCASE
             }
         }
+    }
+
+    fun setManualUppercase(enable: Boolean) {
+        shiftState = if (enable) ShiftState.MANUAL_UPPERCASE else ShiftState.LOWERCASE
     }
 
     // Exposed helpers for testing
@@ -548,14 +586,17 @@ class NXVInputMethodService : InputMethodService(),
     internal fun setLastShiftTapTimeForTest(time: Long) { lastShiftTapTime = time }
 
     private fun handleSuggestionClicked(item: SuggestionItem) {
-        inputConnectionManager.replaceCurrentWord(item.replacementText)
+        val replacement = item.replacementText
+        inputConnectionManager.replaceCurrentWord(replacement)
         if (currentSettingsState.value.autoSpacing) {
             inputConnectionManager.commitText(" ")
         }
         avroRawBuffer.clear()
 
         val locale = if (currentMode == KeyboardMode.ENGLISH) "en" else "bn"
-        learnWord(item.replacementText, locale)
+        learnWord(replacement, locale)
+        suggestionEngine.nextWordPredictor.recordBigram(lastCommittedWord, replacement)
+        lastCommittedWord = replacement
         refreshSuggestions()
     }
 
@@ -652,10 +693,13 @@ class NXVInputMethodService : InputMethodService(),
                 else -> "english"
             }
 
+            val contextText = inputConnectionManager.getTextBeforeCursor(120)
             val list = suggestionEngine.getSuggestions(
                 currentWord = query,
                 mode = lang,
-                isPasswordField = false
+                contextTextBeforeCursor = contextText,
+                isPasswordField = false,
+                autoCorrectEnabled = settings.autoCorrection
             )
             suggestionsState.value = list
         }

@@ -250,6 +250,22 @@ class InputConnectionManager {
         }
     }
 
+    fun moveCursor(offset: Int) {
+        val ic = inputConnection ?: return
+        if (offset == 0) return
+        val keyCode = if (offset < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
+        val count = Math.abs(offset)
+        for (i in 0 until count) {
+            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+        }
+    }
+
+    fun getTextBeforeCursor(length: Int = 100): String {
+        val ic = inputConnection ?: return ""
+        return ic.getTextBeforeCursor(length, 0)?.toString() ?: ""
+    }
+
     fun handleEnter() {
         val ic = inputConnection ?: return
         finishComposing()

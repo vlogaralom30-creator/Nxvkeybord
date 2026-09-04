@@ -51,6 +51,7 @@ fun KeyboardRootView(
     onCharTyped: (String) -> Unit,
     onDelete: () -> Unit,
     onSpace: () -> Unit,
+    onSpaceDrag: ((Float) -> Unit)? = null,
     onEnter: () -> Unit,
     onShiftToggle: () -> Unit,
     onModeSwitch: (KeyboardMode) -> Unit,
@@ -273,6 +274,7 @@ fun KeyboardRootView(
                                     playFeedback()
                                     onSpace()
                                 },
+                                onSpaceDrag = onSpaceDrag,
                                 onEnter = {
                                     playFeedback()
                                     onEnter()
@@ -314,6 +316,7 @@ fun KeyboardRootView(
                                     playFeedback()
                                     onSpace()
                                 },
+                                onSpaceDrag = onSpaceDrag,
                                 onEnter = {
                                     playFeedback()
                                     onEnter()
@@ -355,6 +358,7 @@ fun KeyboardRootView(
                                     playFeedback()
                                     onSpace()
                                 },
+                                onSpaceDrag = onSpaceDrag,
                                 onEnter = {
                                     playFeedback()
                                     onEnter()
@@ -393,10 +397,7 @@ fun KeyboardRootView(
                                     playFeedback()
                                     val isLetter = char.length == 1 && char[0].isLetter()
                                     val finalChar = if (isLetter) {
-                                        when (shiftState) {
-                                            ShiftState.LOWERCASE -> char.lowercase()
-                                            ShiftState.SHIFT_ONCE, ShiftState.CAPS_LOCK -> char.uppercase()
-                                        }
+                                        if (shiftState.isUppercase) char.uppercase() else char.lowercase()
                                     } else {
                                         char
                                     }
@@ -410,6 +411,7 @@ fun KeyboardRootView(
                                     playFeedback()
                                     onSpace()
                                 },
+                                onSpaceDrag = onSpaceDrag,
                                 onEnter = {
                                     playFeedback()
                                     onEnter()

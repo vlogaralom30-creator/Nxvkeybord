@@ -52,6 +52,7 @@ class AvroPhoneticEngine {
 
         // Dependent Vowel Signs (Kar)
         private val VOWEL_KARS = mapOf(
+            "a" to "া",
             "aa" to "া",
             "A" to "া",
             "i" to "ি",
@@ -271,8 +272,8 @@ class AvroPhoneticEngine {
             "khub" to listOf("খুব"),
             "beshi" to listOf("বেশি", "বেশী"),
             "kom" to listOf("কম"),
-            "bhalo" to listOf("ভালো", "ভাল"),
-            "valo" to listOf("ভালো", "ভাল"),
+            "bhalo" to listOf("ভালো", "ভাল", "ভালোই"),
+            "valo" to listOf("ভালো", "ভাল", "ভালোই"),
             "shob" to listOf("সব"),
             "shobai" to listOf("সবাই"),
             "shobar" to listOf("সবার"),
@@ -331,7 +332,10 @@ class AvroPhoneticEngine {
             "kotha" to listOf("কথা"),
             "koro" to listOf("করো", "কর"),
             "kori" to listOf("করি"),
-            "korbo" to listOf("করব", "করবো"),
+            "korbo" to listOf("করবো", "করব"),
+            "korte" to listOf("করতে"),
+            "likhi" to listOf("লিখি"),
+            "nam" to listOf("নাম", "নম"),
             "korchi" to listOf("করছি"),
             "korechi" to listOf("করেছি"),
             "korben" to listOf("করবেন"),
@@ -358,7 +362,7 @@ class AvroPhoneticEngine {
             "boli" to listOf("বলি"),
             "bolechi" to listOf("বলেছি"),
             "bolchen" to listOf("বলছেন"),
-            "jabo" to listOf("যাব", "যাবো"),
+            "jabo" to listOf("যাবো", "যাব"),
             "jai" to listOf("যাই"),
             "jachhi" to listOf("যাচ্ছি"),
             "gechi" to listOf("গেছি"),
@@ -383,7 +387,7 @@ class AvroPhoneticEngine {
             "bangladesh" to listOf("বাংলাদেশ"),
             "bangladeshi" to listOf("বাংলাদেশী", "বাংলাদেশি"),
             "bangla" to listOf("বাংলা"),
-            "banglay" to listOf("বাংলায়", "বাংলায়"),
+            "banglay" to listOf("বাংলায়", "বাংলায়"),
             "bengali" to listOf("বাঙালি", "বাঙ্গালী"),
             "dhaka" to listOf("ঢাকা"),
             "dhakay" to listOf("ঢাকায়", "ঢাকাতে"),
@@ -446,8 +450,8 @@ class AvroPhoneticEngine {
             "shundor" to listOf("সুন্দর"),
             "shundori" to listOf("সুন্দরী"),
             "kharap" to listOf("খারাপ"),
-            "bhalo" to listOf("ভালো", "ভাল"),
-            "valo" to listOf("ভালো", "ভাল"),
+            "bhalo" to listOf("ভালো", "ভাল", "ভালোই"),
+            "valo" to listOf("ভালো", "ভাল", "ভালোই"),
             "bhalobhabe" to listOf("ভালোভাবে"),
             "valobhabe" to listOf("ভালোভাবে"),
             "shuvo" to listOf("শুভ"),
@@ -825,16 +829,11 @@ class AvroPhoneticEngine {
             val vowelMatch = matchVowel(input, i)
             if (vowelMatch != null) {
                 if (prevCharWasConsonant) {
-                    // Inherent vowel 'a' after consonant does not need a Kar
-                    if (vowelMatch.pattern == "a") {
-                        // Inherent 'a'
+                    val kar = VOWEL_KARS[vowelMatch.pattern]
+                    if (kar != null) {
+                        result.append(kar)
                     } else {
-                        val kar = VOWEL_KARS[vowelMatch.pattern]
-                        if (kar != null) {
-                            result.append(kar)
-                        } else {
-                            result.append(vowelMatch.bengali)
-                        }
+                        result.append(vowelMatch.bengali)
                     }
                 } else {
                     result.append(vowelMatch.bengali)

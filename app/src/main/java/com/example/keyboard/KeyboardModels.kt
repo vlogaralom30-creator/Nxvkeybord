@@ -14,13 +14,14 @@ enum class KeyboardMode {
 enum class ShiftState {
     LOWERCASE,
     SHIFT_ONCE,
-    CAPS_LOCK;
+    CAPS_LOCK,
+    MANUAL_UPPERCASE;
 
     val isUppercase: Boolean
-        get() = this == SHIFT_ONCE || this == CAPS_LOCK
+        get() = this == SHIFT_ONCE || this == CAPS_LOCK || this == MANUAL_UPPERCASE
 
     val isCapsLock: Boolean
-        get() = this == CAPS_LOCK
+        get() = this == CAPS_LOCK || this == MANUAL_UPPERCASE
 
     val isShiftOnce: Boolean
         get() = this == SHIFT_ONCE
