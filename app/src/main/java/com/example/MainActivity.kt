@@ -32,6 +32,7 @@ import com.example.data.preferences.KeyboardSettings
 import com.example.ui.settings.AboutScreen
 import com.example.ui.settings.ClipboardPrefsScreen
 import com.example.ui.settings.DictionaryScreen
+import com.example.ui.settings.KeyboardCustomizeScreen
 import com.example.ui.settings.KeyboardPrefsScreen
 import com.example.ui.settings.OnboardingView
 import com.example.ui.settings.PrivacyScreen
@@ -39,6 +40,7 @@ import com.example.ui.settings.SettingsHomeScreen
 import com.example.ui.settings.SettingsScreen
 import com.example.ui.settings.ShortcutsScreen
 import com.example.ui.settings.SoundHapticScreen
+import com.example.ui.settings.ThemeLibraryScreen
 import com.example.ui.settings.TypingPrefsScreen
 import com.example.ui.settings.VaultPrefsScreen
 import com.example.ui.theme.MyApplicationTheme
@@ -84,10 +86,23 @@ class MainActivity : ComponentActivity() {
                     val dictionaryWords by app.repository.allDictionaryWords.collectAsState(initial = emptyList())
                     val shortcuts by app.repository.shortcuts.collectAsState(initial = emptyList())
 
-                    var currentScreen by remember(settings.onboardingCompleted) {
+                    val initialTarget = remember {
+                        when (intent?.getStringExtra("NAVIGATE_TO")) {
+                            "THEME_LIBRARY" -> SettingsScreen.THEME_LIBRARY
+                            "VAULT" -> SettingsScreen.VAULT
+                            "CLIPBOARD" -> SettingsScreen.CLIPBOARD
+                            "SOUND_HAPTIC" -> SettingsScreen.SOUND_HAPTIC
+                            else -> null
+                        }
+                    }
+
+                    var currentScreen by remember(settings.onboardingCompleted, initialTarget) {
                         mutableStateOf(
-                            if (settings.onboardingCompleted) SettingsScreen.HOME
-                            else SettingsScreen.ONBOARDING
+                            when {
+                                !settings.onboardingCompleted -> SettingsScreen.ONBOARDING
+                                initialTarget != null -> initialTarget
+                                else -> SettingsScreen.HOME
+                            }
                         )
                     }
 
@@ -123,6 +138,16 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            SettingsScreen.THEME_LIBRARY -> {
+                                ThemeLibraryScreen(
+                                    currentThemeId = settings.theme,
+                                    onSelectTheme = { themeId ->
+                                        scope.launch { app.preferences.updateTheme(themeId) }
+                                    },
+                                    onBack = { currentScreen = SettingsScreen.HOME }
+                                )
+                            }
+
                             SettingsScreen.KEYBOARD_PREFS -> {
                                 KeyboardPrefsScreen(
                                     settings = settings,
@@ -140,6 +165,31 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onUpdateOneHanded = { mode ->
                                         scope.launch { app.preferences.updateOneHandedMode(mode) }
+                                    },
+                                    onBack = { currentScreen = SettingsScreen.HOME }
+                                )
+                            }
+
+                            SettingsScreen.CUSTOMIZE_KEYS -> {
+                                KeyboardCustomizeScreen(
+                                    settings = settings,
+                                    onUpdateShowEmojiKey = { show ->
+                                        scope.launch { app.preferences.updateShowEmojiKey(show) }
+                                    },
+                                    onUpdateShowLanguageKey = { show ->
+                                        scope.launch { app.preferences.updateShowLanguageKey(show) }
+                                    },
+                                    onUpdateShowKeySubLabels = { show ->
+                                        scope.launch { app.preferences.updateShowKeySubLabels(show) }
+                                    },
+                                    onUpdateKeyPopupMode = { mode ->
+                                        scope.launch { app.preferences.updateKeyPopupMode(mode) }
+                                    },
+                                    onUpdateShowNumberRow = { enabled ->
+                                        scope.launch { app.preferences.updateShowNumberRow(enabled) }
+                                    },
+                                    onUpdateHeightRatio = { height ->
+                                        scope.launch { app.preferences.updateKeyboardHeightRatio(height) }
                                     },
                                     onBack = { currentScreen = SettingsScreen.HOME }
                                 )

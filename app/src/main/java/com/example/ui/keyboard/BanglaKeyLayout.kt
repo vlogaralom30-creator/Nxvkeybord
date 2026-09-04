@@ -20,6 +20,10 @@ fun BanglaKeyLayout(
     keyHeight: Dp,
     palette: KeyboardPalette,
     enterLabel: String,
+    showEmojiKey: Boolean = true,
+    showLanguageKey: Boolean = true,
+    showKeySubLabels: Boolean = true,
+    popupMode: String = "popup",
     onCharTyped: (String) -> Unit,
     onDelete: () -> Unit,
     onSpace: () -> Unit,
@@ -49,6 +53,8 @@ fun BanglaKeyLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -65,6 +71,8 @@ fun BanglaKeyLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -81,6 +89,8 @@ fun BanglaKeyLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -99,6 +109,8 @@ fun BanglaKeyLayout(
                 isSpecialAction = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onShift() }
             )
 
@@ -108,6 +120,8 @@ fun BanglaKeyLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -120,11 +134,13 @@ fun BanglaKeyLayout(
                 isRepeatable = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onDelete() }
             )
         }
 
-        // Bottom Row: [123] [😊] [🌐] [    Space (বাংলা)    ] [।] [↵]
+        // Bottom Row: [123] [😊 (if enabled)] [🌐 (if enabled)] [    Space (বাংলা)    ] [।] [↵]
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
@@ -136,34 +152,52 @@ fun BanglaKeyLayout(
                 isSpecialAction = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onSwitchMode(KeyboardMode.NUMBERS) }
             )
 
-            KeyboardKeyView(
-                label = "😊",
-                modifier = Modifier.weight(1.0f),
-                isSpecialAction = true,
-                height = keyHeight,
-                palette = palette,
-                onTap = { onSwitchMode(KeyboardMode.EMOJI) }
-            )
+            if (showEmojiKey) {
+                KeyboardKeyView(
+                    label = "😊",
+                    modifier = Modifier.weight(1.0f),
+                    isSpecialAction = true,
+                    height = keyHeight,
+                    palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
+                    onTap = { onSwitchMode(KeyboardMode.EMOJI) }
+                )
+            }
 
-            KeyboardKeyView(
-                label = "🌐",
-                modifier = Modifier.weight(1.0f),
-                isSpecialAction = true,
-                height = keyHeight,
-                palette = palette,
-                onTap = { onLanguageCycle() },
-                onLongPress = { onLongPressLanguage() }
-            )
+            if (showLanguageKey) {
+                KeyboardKeyView(
+                    label = "🌐",
+                    modifier = Modifier.weight(1.0f),
+                    isSpecialAction = true,
+                    height = keyHeight,
+                    palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
+                    onTap = { onLanguageCycle() },
+                    onLongPress = { onLongPressLanguage() }
+                )
+            }
+
+            val spaceWeight = when {
+                !showEmojiKey && !showLanguageKey -> 5.2f
+                !showEmojiKey || !showLanguageKey -> 4.3f
+                else -> 3.5f
+            }
 
             KeyboardKeyView(
                 label = "বাংলা",
-                modifier = Modifier.weight(3.5f),
+                modifier = Modifier.weight(spaceWeight),
                 isSpaceBar = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onHorizontalDrag = onSpaceDrag,
                 onTap = { onSpace() }
             )
@@ -174,6 +208,8 @@ fun BanglaKeyLayout(
                 isSpecialAction = false,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onCharTyped("।") }
             )
 
@@ -184,6 +220,8 @@ fun BanglaKeyLayout(
                 isPrimaryAction = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onEnter() }
             )
         }

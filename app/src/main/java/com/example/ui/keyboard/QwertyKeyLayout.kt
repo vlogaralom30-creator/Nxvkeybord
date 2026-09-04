@@ -16,6 +16,11 @@ import com.example.keyboard.KeyboardMode
 import com.example.keyboard.ShiftState
 import com.example.language.english.EnglishEngine
 import com.example.theme.KeyboardPalette
+import com.example.theme.ThemeSpecialIconStyle
+
+private val STRAWBERRY_ROW1_HINTS = listOf("+", "×", "+", "=", "/", "-", "<", ">", "[", "]")
+private val STRAWBERRY_ROW2_HINTS = listOf("!", "@", "#", "%", "^", "&", "*", "(", ")")
+private val STRAWBERRY_ROW3_HINTS = listOf("-", "'", "\"", ":", ";", ",", "?")
 
 @Composable
 fun QwertyKeyLayout(
@@ -25,6 +30,10 @@ fun QwertyKeyLayout(
     keyHeight: Dp,
     palette: KeyboardPalette,
     enterLabel: String,
+    showEmojiKey: Boolean = true,
+    showLanguageKey: Boolean = true,
+    showKeySubLabels: Boolean = true,
+    popupMode: String = "popup",
     onCharTyped: (String) -> Unit,
     onDelete: () -> Unit,
     onSpace: () -> Unit,
@@ -37,6 +46,8 @@ fun QwertyKeyLayout(
     modifier: Modifier = Modifier
 ) {
     val isShifted = shiftState.isUppercase
+    val isStrawberry = palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT
+    val isPuppy = palette.specialIconStyle == ThemeSpecialIconStyle.PUPPY_MINIMAL
 
     Column(
         modifier = modifier
@@ -55,6 +66,8 @@ fun QwertyKeyLayout(
                         modifier = Modifier.weight(1f),
                         height = keyHeight * 0.85f,
                         palette = palette,
+                        showSubLabel = showKeySubLabels,
+                        popupMode = popupMode,
                         onTap = { onCharTyped(num) }
                     )
                 }
@@ -68,10 +81,19 @@ fun QwertyKeyLayout(
         ) {
             EnglishEngine.QWERTY_ROW_1.forEachIndexed { index, letter ->
                 val char = if (isShifted) letter.uppercase() else letter.lowercase()
-                val alt = EnglishEngine.NUMBER_ROW.getOrNull(index)
+                val alt = if (isStrawberry) {
+                    STRAWBERRY_ROW1_HINTS.getOrNull(index)
+                } else if (!showNumberRow) {
+                    EnglishEngine.NUMBER_ROW.getOrNull(index)
+                } else {
+                    null
+                }
+
                 KeyboardKeyView(
                     label = char,
-                    subLabel = if (!showNumberRow) alt else null,
+                    subLabel = alt,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
@@ -87,14 +109,20 @@ fun QwertyKeyLayout(
             horizontalArrangement = Arrangement.Center
         ) {
             Spacer(modifier = Modifier.weight(0.5f))
-            EnglishEngine.QWERTY_ROW_2.forEach { letter ->
+            EnglishEngine.QWERTY_ROW_2.forEachIndexed { index, letter ->
                 val char = if (isShifted) letter.uppercase() else letter.lowercase()
+                val alt = if (isStrawberry) STRAWBERRY_ROW2_HINTS.getOrNull(index) else null
+
                 KeyboardKeyView(
                     label = char,
+                    subLabel = alt,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
-                    onTap = { onCharTyped(char) }
+                    onTap = { onCharTyped(char) },
+                    onLongPress = { alt?.let { onCharTyped(it) } }
                 )
             }
             Spacer(modifier = Modifier.weight(0.5f))
@@ -120,17 +148,29 @@ fun QwertyKeyLayout(
                 isShiftActive = shiftState == ShiftState.SHIFT_ONCE,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onShift() }
             )
 
-            EnglishEngine.QWERTY_ROW_3.forEach { letter ->
+            EnglishEngine.QWERTY_ROW_3.forEachIndexed { index, letter ->
                 val char = if (isShifted) letter.uppercase() else letter.lowercase()
+                val alt = when {
+                    isStrawberry -> STRAWBERRY_ROW3_HINTS.getOrNull(index)
+                    isPuppy && index == 0 -> "*"
+                    else -> null
+                }
+
                 KeyboardKeyView(
                     label = char,
+                    subLabel = alt,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
-                    onTap = { onCharTyped(char) }
+                    onTap = { onCharTyped(char) },
+                    onLongPress = { alt?.let { onCharTyped(it) } }
                 )
             }
 
@@ -142,71 +182,97 @@ fun QwertyKeyLayout(
                 isRepeatable = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onDelete() }
             )
         }
 
-        // Row 4: [?123] [😊] [🌐] [    Space    ] [.] [↵]
+        // Row 4: [?123] [😊 (if enabled)] [🌐 (if enabled)] [    Space    ] [.] [↵]
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Numbers & Symbols switch (?123)
+            // Numbers & Symbols switch (?123) / (123)
+            val numSwitchLabel = if (isPuppy) "123" else "?123"
             KeyboardKeyView(
-                label = "?123",
+                label = numSwitchLabel,
                 modifier = Modifier.weight(1.3f),
                 isSpecialAction = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onSwitchMode(KeyboardMode.NUMBERS) }
             )
 
-            // Emoji
-            KeyboardKeyView(
-                label = "😊",
-                modifier = Modifier.weight(1.0f),
-                isSpecialAction = true,
-                height = keyHeight,
-                palette = palette,
-                onTap = { onSwitchMode(KeyboardMode.EMOJI) }
-            )
+            // Emoji button 😊 (Always working and customizable!)
+            if (showEmojiKey) {
+                KeyboardKeyView(
+                    label = "😊",
+                    modifier = Modifier.weight(1.0f),
+                    isSpecialAction = true,
+                    height = keyHeight,
+                    palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
+                    onTap = { onSwitchMode(KeyboardMode.EMOJI) }
+                )
+            }
 
-            // Language Switch 🌐
-            KeyboardKeyView(
-                label = "🌐",
-                modifier = Modifier.weight(1.0f),
-                isSpecialAction = true,
-                height = keyHeight,
-                palette = palette,
-                onTap = { onLanguageCycle() },
-                onLongPress = { onLongPressLanguage() }
-            )
+            // Language Switch 🌐 (Customizable)
+            if (showLanguageKey) {
+                KeyboardKeyView(
+                    label = "🌐",
+                    subLabel = if (isStrawberry) "..." else null,
+                    modifier = Modifier.weight(1.0f),
+                    isSpecialAction = true,
+                    height = keyHeight,
+                    palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
+                    onTap = { onLanguageCycle() },
+                    onLongPress = { onLongPressLanguage() }
+                )
+            }
 
             // Space Bar with language badge and geometric indicator
+            val spaceWeight = when {
+                !showEmojiKey && !showLanguageKey -> 5.4f
+                !showEmojiKey || !showLanguageKey -> 4.4f
+                else -> 3.6f
+            }
             val spaceLabel = if (isAvro) "AVRO" else "SPACE"
             KeyboardKeyView(
                 label = spaceLabel,
-                modifier = Modifier.weight(4.0f),
+                modifier = Modifier.weight(spaceWeight),
                 isSpaceBar = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onHorizontalDrag = onSpaceDrag,
                 onTap = { onSpace() }
             )
 
             // Punctuation (comma/period/dari)
-            val punctChar = if (isAvro) "।" else "."
+            val punctChar = if (isAvro) "।" else if (isPuppy) "," else "."
+            val punctAlt = if (isPuppy) ";" else if (isStrawberry) "..." else null
             KeyboardKeyView(
                 label = punctChar,
+                subLabel = punctAlt,
                 modifier = Modifier.weight(1.0f),
                 isSpecialAction = false,
                 height = keyHeight,
                 palette = palette,
-                onTap = { onCharTyped(punctChar) }
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
+                onTap = { onCharTyped(punctChar) },
+                onLongPress = { punctAlt?.let { onCharTyped(it) } }
             )
 
-            // Enter Key (Geometric Balance focal accent)
+            // Enter Key (Theme focal accent)
             KeyboardKeyView(
                 label = enterLabel,
                 modifier = Modifier.weight(1.4f),
@@ -214,6 +280,8 @@ fun QwertyKeyLayout(
                 isPrimaryAction = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onEnter() }
             )
         }

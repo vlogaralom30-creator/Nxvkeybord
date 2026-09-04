@@ -283,6 +283,25 @@ class NXVInputMethodService : InputMethodService(),
                         }
                         startActivity(intent)
                     },
+                    onOpenThemes = {
+                        val intent = Intent(this@NXVInputMethodService, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            putExtra("NAVIGATE_TO", "THEME_LIBRARY")
+                        }
+                        startActivity(intent)
+                    },
+                    onToggleVibration = { enabled ->
+                        serviceScope.launch {
+                            val app = application as? NXVApplication ?: NXVApplication.instance
+                            app.preferences.updateVibrationEnabled(enabled)
+                        }
+                    },
+                    onToggleSound = { enabled ->
+                        serviceScope.launch {
+                            val app = application as? NXVApplication ?: NXVApplication.instance
+                            app.preferences.updateSoundEnabled(enabled)
+                        }
+                    },
                     onUpdateOneHanded = { mode ->
                         serviceScope.launch {
                             val app = application as? NXVApplication ?: NXVApplication.instance

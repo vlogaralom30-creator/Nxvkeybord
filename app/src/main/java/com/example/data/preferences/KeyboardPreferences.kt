@@ -29,6 +29,10 @@ data class KeyboardSettings(
     val suggestionsEnabled: Boolean = true,
     val autoCorrection: Boolean = true,
     val keyPreviewEnabled: Boolean = true,
+    val showEmojiKey: Boolean = true,
+    val showLanguageKey: Boolean = true,
+    val showKeySubLabels: Boolean = true,
+    val keyPopupMode: String = "popup",
     val onboardingCompleted: Boolean = false
 )
 
@@ -49,6 +53,10 @@ class KeyboardPreferences(private val context: Context) {
         val KEY_SUGGESTIONS_ENABLED = booleanPreferencesKey("suggestions_enabled")
         val KEY_AUTO_CORRECTION = booleanPreferencesKey("auto_correction")
         val KEY_KEY_PREVIEW = booleanPreferencesKey("key_preview_enabled")
+        val KEY_SHOW_EMOJI_KEY = booleanPreferencesKey("show_emoji_key")
+        val KEY_SHOW_LANGUAGE_KEY = booleanPreferencesKey("show_language_key")
+        val KEY_SHOW_KEY_SUBLABELS = booleanPreferencesKey("show_key_sublabels")
+        val KEY_KEY_POPUP_MODE = stringPreferencesKey("key_popup_mode")
         val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     }
 
@@ -68,6 +76,10 @@ class KeyboardPreferences(private val context: Context) {
             suggestionsEnabled = prefs[KEY_SUGGESTIONS_ENABLED] ?: true,
             autoCorrection = prefs[KEY_AUTO_CORRECTION] ?: true,
             keyPreviewEnabled = prefs[KEY_KEY_PREVIEW] ?: true,
+            showEmojiKey = prefs[KEY_SHOW_EMOJI_KEY] ?: true,
+            showLanguageKey = prefs[KEY_SHOW_LANGUAGE_KEY] ?: true,
+            showKeySubLabels = prefs[KEY_SHOW_KEY_SUBLABELS] ?: true,
+            keyPopupMode = prefs[KEY_KEY_POPUP_MODE] ?: "popup",
             onboardingCompleted = prefs[KEY_ONBOARDING_COMPLETED] ?: false
         )
     }
@@ -126,6 +138,22 @@ class KeyboardPreferences(private val context: Context) {
 
     suspend fun updateKeyPreviewEnabled(enabled: Boolean) {
         context.dataStore.edit { it[KEY_KEY_PREVIEW] = enabled }
+    }
+
+    suspend fun updateShowEmojiKey(show: Boolean) {
+        context.dataStore.edit { it[KEY_SHOW_EMOJI_KEY] = show }
+    }
+
+    suspend fun updateShowLanguageKey(show: Boolean) {
+        context.dataStore.edit { it[KEY_SHOW_LANGUAGE_KEY] = show }
+    }
+
+    suspend fun updateShowKeySubLabels(show: Boolean) {
+        context.dataStore.edit { it[KEY_SHOW_KEY_SUBLABELS] = show }
+    }
+
+    suspend fun updateKeyPopupMode(mode: String) {
+        context.dataStore.edit { it[KEY_KEY_POPUP_MODE] = mode }
     }
 
     suspend fun setOnboardingCompleted(completed: Boolean) {

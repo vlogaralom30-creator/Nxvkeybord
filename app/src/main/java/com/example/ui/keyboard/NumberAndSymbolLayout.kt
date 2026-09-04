@@ -21,6 +21,10 @@ fun NumberAndSymbolLayout(
     keyHeight: Dp,
     palette: KeyboardPalette,
     enterLabel: String,
+    showEmojiKey: Boolean = true,
+    showLanguageKey: Boolean = true,
+    showKeySubLabels: Boolean = true,
+    popupMode: String = "popup",
     onCharTyped: (String) -> Unit,
     onDelete: () -> Unit,
     onSpace: () -> Unit,
@@ -52,6 +56,8 @@ fun NumberAndSymbolLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -68,6 +74,8 @@ fun NumberAndSymbolLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -86,6 +94,8 @@ fun NumberAndSymbolLayout(
                 isSpecialAction = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onTogglePage() }
             )
 
@@ -95,6 +105,8 @@ fun NumberAndSymbolLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -107,11 +119,13 @@ fun NumberAndSymbolLayout(
                 isRepeatable = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onDelete() }
             )
         }
 
-        // Row 4: [ABC] [😊] [🌐] [Space] [.] [↵]
+        // Row 4: [ABC] [😊 (if enabled)] [🌐 (if enabled)] [Space] [.] [↵]
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
@@ -123,34 +137,52 @@ fun NumberAndSymbolLayout(
                 isSpecialAction = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onSwitchMode(KeyboardMode.ENGLISH) }
             )
 
-            KeyboardKeyView(
-                label = "😊",
-                modifier = Modifier.weight(1.0f),
-                isSpecialAction = true,
-                height = keyHeight,
-                palette = palette,
-                onTap = { onSwitchMode(KeyboardMode.EMOJI) }
-            )
+            if (showEmojiKey) {
+                KeyboardKeyView(
+                    label = "😊",
+                    modifier = Modifier.weight(1.0f),
+                    isSpecialAction = true,
+                    height = keyHeight,
+                    palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
+                    onTap = { onSwitchMode(KeyboardMode.EMOJI) }
+                )
+            }
 
-            KeyboardKeyView(
-                label = "🌐",
-                modifier = Modifier.weight(1.0f),
-                isSpecialAction = true,
-                height = keyHeight,
-                palette = palette,
-                onTap = { onLanguageCycle() },
-                onLongPress = { onLongPressLanguage() }
-            )
+            if (showLanguageKey) {
+                KeyboardKeyView(
+                    label = "🌐",
+                    modifier = Modifier.weight(1.0f),
+                    isSpecialAction = true,
+                    height = keyHeight,
+                    palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
+                    onTap = { onLanguageCycle() },
+                    onLongPress = { onLongPressLanguage() }
+                )
+            }
+
+            val spaceWeight = when {
+                !showEmojiKey && !showLanguageKey -> 5.4f
+                !showEmojiKey || !showLanguageKey -> 4.4f
+                else -> 3.6f
+            }
 
             KeyboardKeyView(
                 label = "SPACE",
-                modifier = Modifier.weight(3.8f),
+                modifier = Modifier.weight(spaceWeight),
                 isSpaceBar = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onHorizontalDrag = onSpaceDrag,
                 onTap = { onSpace() }
             )
@@ -161,6 +193,8 @@ fun NumberAndSymbolLayout(
                 isSpecialAction = false,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onCharTyped(".") }
             )
 
@@ -171,6 +205,8 @@ fun NumberAndSymbolLayout(
                 isPrimaryAction = true,
                 height = keyHeight,
                 palette = palette,
+                showSubLabel = showKeySubLabels,
+                popupMode = popupMode,
                 onTap = { onEnter() }
             )
         }

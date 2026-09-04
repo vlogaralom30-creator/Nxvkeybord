@@ -2,17 +2,21 @@ package com.example.ui.keyboard
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,14 +30,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import com.example.theme.KeyPopupStyle
 import com.example.theme.KeyboardPalette
+import com.example.theme.PuppyPopupCharacter
+import com.example.theme.SpacebarStyle
+import com.example.theme.StrawberryThemeIcons
+import com.example.theme.ThemeSpecialIconStyle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -43,6 +57,8 @@ fun KeyboardKeyView(
     label: String,
     modifier: Modifier = Modifier,
     subLabel: String? = null,
+    showSubLabel: Boolean = true,
+    popupMode: String = "popup",
     isSpecialAction: Boolean = false,
     isPrimaryAction: Boolean = false,
     isSpaceBar: Boolean = false,
@@ -51,7 +67,7 @@ fun KeyboardKeyView(
     isCapsLock: Boolean = false,
     height: Dp = 46.dp,
     palette: KeyboardPalette,
-    showPreview: Boolean = false,
+    showPreview: Boolean = true,
     onHorizontalDrag: ((Float) -> Unit)? = null,
     onTap: () -> Unit,
     onLongPress: (() -> Unit)? = null
@@ -61,29 +77,43 @@ fun KeyboardKeyView(
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.94f else 1.0f,
-        animationSpec = tween(durationMillis = 70),
+        animationSpec = tween(durationMillis = 60),
         label = "key_scale"
     )
 
+    // Determine Key Background Color based on Theme & State
     val bgColor = when {
         isPressed -> when {
+            palette.popupStyle == KeyPopupStyle.PUPPY_CHARACTER && label.length == 1 && label[0].isLetter() -> palette.keyPressedBackground // Vibrant blue for Puppy Pop!
             isCapsLock -> palette.accentColor.copy(alpha = 0.85f)
-            isPrimaryAction -> Color(0xFFB5D1F8)
+            isPrimaryAction -> palette.accentColor
             isSpecialAction || isShiftActive -> palette.keyPressedBackground
-            else -> palette.keyActionBackground
+            else -> palette.keyPressedBackground
         }
         isCapsLock -> palette.accentColor
         isShiftActive -> palette.keyPressedBackground
-        isPrimaryAction -> palette.accentColor
+        isPrimaryAction -> if (palette.specialIconStyle == ThemeSpecialIconStyle.PUPPY_MINIMAL) palette.keyActionBackground else palette.accentColor
         isSpecialAction -> palette.keyActionBackground
         else -> palette.keyBackground
     }
 
+    // Determine Label Text Color based on Theme & State
     val labelColor = when {
-        isCapsLock || isPrimaryAction -> palette.onAccentColor
-        isShiftActive -> palette.accentColor
+        isPressed && palette.popupStyle == KeyPopupStyle.PUPPY_CHARACTER && label.length == 1 && label[0].isLetter() -> Color.White
+        isCapsLock || (isPrimaryAction && palette.specialIconStyle != ThemeSpecialIconStyle.PUPPY_MINIMAL) -> palette.onAccentColor
+        isShiftActive && palette.specialIconStyle != ThemeSpecialIconStyle.STRAWBERRY_DESSERT -> palette.accentColor
         isSpaceBar -> palette.secondaryTextColor
+        isSpecialAction -> palette.textColor
         else -> palette.textColor
+    }
+
+    // Key shape & elevation from theme
+    val cornerShape = RoundedCornerShape(palette.keyCornerRadius)
+    val elevation = if (isPressed) palette.pressedElevation else palette.keyElevation
+    val borderColor = if (isPrimaryAction && palette.specialIconStyle != ThemeSpecialIconStyle.STRAWBERRY_DESSERT) {
+        Color.Transparent
+    } else {
+        palette.keyBorderColor
     }
 
     val gestureModifier = if (isSpaceBar && onHorizontalDrag != null) {
@@ -174,39 +204,219 @@ fun KeyboardKeyView(
             .height(height)
             .scale(scale)
             .shadow(
-                elevation = if (isPressed) 0.5.dp else 1.5.dp,
-                shape = RoundedCornerShape(8.dp),
-                spotColor = Color(0x33000000)
+                elevation = elevation,
+                shape = cornerShape,
+                spotColor = Color(0x35000000)
             )
-            .clip(RoundedCornerShape(8.dp))
+            .clip(cornerShape)
             .background(bgColor)
             .border(
-                width = 0.5.dp,
-                color = if (isPrimaryAction || isCapsLock) Color.Transparent else palette.dividerColor.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(8.dp)
+                width = palette.keyBorderWidth,
+                color = borderColor,
+                shape = cornerShape
             )
             .then(gestureModifier)
             .testTag("key_$label"),
         contentAlignment = Alignment.Center
     ) {
+        // Main key surface content
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = label,
-                color = labelColor,
-                fontSize = if (label.length > 2) 13.sp else 18.sp,
-                fontWeight = when {
-                    isPrimaryAction || isCapsLock -> FontWeight.Bold
-                    isSpecialAction || isShiftActive -> FontWeight.SemiBold
-                    else -> FontWeight.Medium
-                },
-                maxLines = 1
-            )
+            // Check for theme-specific special icon drawings
+            when {
+                // 1. STRAWBERRY DESSERT THEME SPECIAL ICONS
+                palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT && (label == "⇧" || label == "⬆" || label == "⇪") -> {
+                    StrawberryThemeIcons.StrawberryShiftIcon(
+                        size = (height * 0.58f).coerceIn(20.dp, 28.dp),
+                        isShifted = isShiftActive || isCapsLock
+                    )
+                }
+                palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT && label == "⌫" -> {
+                    StrawberryThemeIcons.FrappeBackspaceIcon(
+                        size = (height * 0.58f).coerceIn(20.dp, 28.dp)
+                    )
+                }
+                palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT && (label == "😊" || label == "🌐" || label == "?123" || label == "#+=") -> {
+                    if (label == "😊") {
+                        StrawberryThemeIcons.IceCreamIcon(size = (height * 0.58f).coerceIn(20.dp, 28.dp))
+                    } else {
+                        Text(
+                            text = if (label == "🌐") "lolo" else label,
+                            color = palette.textColor,
+                            fontSize = if (label == "🌐") 11.sp else 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT && (isPrimaryAction || label == "↵" || label == "Go" || label == "Search" || label == "Done") -> {
+                    StrawberryThemeIcons.ShortcakeEnterIcon(
+                        size = (height * 0.62f).coerceIn(22.dp, 30.dp)
+                    )
+                }
+
+                // 2. PUPPY POP MINIMAL ICONS (Reference Image 1)
+                palette.specialIconStyle == ThemeSpecialIconStyle.PUPPY_MINIMAL && (label == "⇧" || label == "⬆" || label == "⇪") -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        // Minimalist thin arrow with dot (as seen in Image 1)
+                        Text(
+                            text = "↑",
+                            color = palette.textColor,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                        // Top-left dot indicator
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(top = 4.dp, start = 6.dp)
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (isShiftActive || isCapsLock) palette.accentColor
+                                    else palette.secondaryTextColor.copy(alpha = 0.5f)
+                                )
+                        )
+                    }
+                }
+                palette.specialIconStyle == ThemeSpecialIconStyle.PUPPY_MINIMAL && label == "⌫" -> {
+                    // Minimalist backspace symbol
+                    Canvas(modifier = Modifier.size(24.dp)) {
+                        val w = size.width
+                        val h = size.height
+                        val tagPath = Path().apply {
+                            moveTo(w * 0.25f, h * 0.5f)
+                            lineTo(w * 0.45f, h * 0.22f)
+                            lineTo(w * 0.85f, h * 0.22f)
+                            lineTo(w * 0.85f, h * 0.78f)
+                            lineTo(w * 0.45f, h * 0.78f)
+                            close()
+                        }
+                        drawPath(path = tagPath, color = palette.textColor, style = Stroke(width = 1.8f))
+                        // 'X' inside
+                        drawLine(
+                            color = palette.textColor,
+                            start = Offset(w * 0.54f, h * 0.38f),
+                            end = Offset(w * 0.74f, h * 0.62f),
+                            strokeWidth = 1.6f
+                        )
+                        drawLine(
+                            color = palette.textColor,
+                            start = Offset(w * 0.74f, h * 0.38f),
+                            end = Offset(w * 0.54f, h * 0.62f),
+                            strokeWidth = 1.6f
+                        )
+                    }
+                }
+                palette.specialIconStyle == ThemeSpecialIconStyle.PUPPY_MINIMAL && (isPrimaryAction || label == "↵" || label == "Go" || label == "Done") -> {
+                    // Minimalist angled enter return arrow
+                    Canvas(modifier = Modifier.size(26.dp)) {
+                        val w = size.width
+                        val h = size.height
+                        val enterPath = Path().apply {
+                            moveTo(w * 0.80f, h * 0.35f)
+                            lineTo(w * 0.80f, h * 0.65f)
+                            lineTo(w * 0.30f, h * 0.65f)
+                            lineTo(w * 0.42f, h * 0.50f)
+                            moveTo(w * 0.30f, h * 0.65f)
+                            lineTo(w * 0.42f, h * 0.80f)
+                        }
+                        drawPath(path = enterPath, color = palette.textColor, style = Stroke(width = 2.2f))
+                    }
+                }
+
+                // 3. STANDARD TYPOGRAPHY KEYS (All themes)
+                else -> {
+                    if (isSpaceBar) {
+                        when (palette.spacebarStyle) {
+                            SpacebarStyle.PUPPY_BRACKET -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    // Minimalist center bracket line: └─┘
+                                    Canvas(modifier = Modifier.size(width = 38.dp, height = 12.dp)) {
+                                        val w = size.width
+                                        val h = size.height
+                                        val bracketPath = Path().apply {
+                                            moveTo(w * 0.1f, h * 0.2f)
+                                            lineTo(w * 0.1f, h * 0.8f)
+                                            lineTo(w * 0.9f, h * 0.8f)
+                                            lineTo(w * 0.9f, h * 0.2f)
+                                        }
+                                        drawPath(path = bracketPath, color = palette.textColor.copy(alpha = 0.85f), style = Stroke(width = 2.0f))
+                                    }
+
+                                    // Watermark "nxv" or label
+                                    Text(
+                                        text = palette.spacebarWatermark ?: label,
+                                        color = palette.secondaryTextColor.copy(alpha = 0.65f),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .padding(bottom = 3.dp, end = 8.dp)
+                                    )
+                                }
+                            }
+                            SpacebarStyle.STRAWBERRY_PILL -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (label != "SPACE") {
+                                        Text(
+                                            text = label,
+                                            color = palette.secondaryTextColor,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                            SpacebarStyle.STANDARD_BAR -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = labelColor,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    // Subtle indicator bar
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .padding(bottom = 4.dp)
+                                            .width(36.dp)
+                                            .height(2.dp)
+                                            .clip(RoundedCornerShape(1.dp))
+                                            .background(palette.dividerColor)
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = label,
+                            color = labelColor,
+                            fontSize = if (label.length > 2) 13.sp else 18.sp,
+                            fontWeight = when {
+                                isPrimaryAction || isCapsLock -> FontWeight.Bold
+                                isSpecialAction || isShiftActive -> FontWeight.SemiBold
+                                else -> FontWeight.Medium
+                            },
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
 
             // CapsLock active indicator bar
-            if (isCapsLock) {
+            if (isCapsLock && palette.specialIconStyle != ThemeSpecialIconStyle.STRAWBERRY_DESSERT) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -216,7 +426,7 @@ fun KeyboardKeyView(
                         .clip(RoundedCornerShape(1.dp))
                         .background(palette.onAccentColor)
                 )
-            } else if (isShiftActive) {
+            } else if (isShiftActive && palette.specialIconStyle == ThemeSpecialIconStyle.STANDARD) {
                 // One-time Shift active indicator dot
                 Box(
                     modifier = Modifier
@@ -229,29 +439,79 @@ fun KeyboardKeyView(
                 )
             }
 
-            // Spacebar geometric balance indicator bar
-            if (isSpaceBar) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 5.dp)
-                        .width(36.dp)
-                        .height(2.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(palette.dividerColor)
-                )
-            }
-
-            // Optional subLabel (like alt symbol) in top-right corner
-            if (subLabel != null) {
+            // SubLabel (e.g. number hint or top symbol)
+            if (showSubLabel && subLabel != null) {
                 Text(
                     text = subLabel,
-                    color = palette.secondaryTextColor.copy(alpha = 0.6f),
-                    fontSize = 9.sp,
+                    color = palette.topRowHintColor ?: palette.secondaryTextColor.copy(alpha = 0.6f),
+                    fontSize = if (palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT) 9.sp else 9.sp,
+                    fontWeight = if (palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT) FontWeight.Bold else FontWeight.Normal,
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 2.dp, end = 4.dp)
+                        .align(
+                            if (palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT) Alignment.TopCenter
+                            else Alignment.TopEnd
+                        )
+                        .padding(
+                            top = if (palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT) 1.5.dp else 2.dp,
+                            end = if (palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT) 0.dp else 4.dp
+                        )
                 )
+            }
+        }
+
+        // Popup Preview when pressed based on popupMode
+        if (isPressed && showPreview && popupMode != "disabled" && label.length == 1) {
+            when {
+                popupMode == "popup" && palette.popupStyle == KeyPopupStyle.PUPPY_CHARACTER && label[0].isLetter() -> {
+                    PuppyPopupCharacter(
+                        char = label.uppercase(),
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .offset(y = (-56).dp)
+                            .zIndex(99f)
+                    )
+                }
+                popupMode == "popup" -> {
+                    // Standard / Themed floating bubble
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .offset(y = (-48).dp)
+                            .size(46.dp)
+                            .zIndex(99f)
+                            .shadow(8.dp, RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(palette.accentColor),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = label.uppercase(),
+                            color = palette.onAccentColor,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                popupMode == "mini" -> {
+                    // Mini on-key indicator badge
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 2.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(palette.accentColor.copy(alpha = 0.85f))
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                            .zIndex(50f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = label.uppercase(),
+                            color = palette.onAccentColor,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
     }

@@ -2,6 +2,7 @@ package com.example.ui.settings
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.BorderStroke
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -400,10 +402,17 @@ fun SettingsHomeScreen(
                 tag = "tile_keyboard"
             )
             SettingsTile(
+                icon = Icons.Default.Tune,
+                title = "Layout, Buttons & Popups (কাস্টমাইজেশন)",
+                subtitle = "Toggle Emoji / Lang buttons, key hints, popup modes",
+                onClick = { onNavigate(SettingsScreen.CUSTOMIZE_KEYS) },
+                tag = "tile_customize_keys"
+            )
+            SettingsTile(
                 icon = Icons.Default.Palette,
                 title = "Themes & Appearance",
-                subtitle = "Dark, Light, AMOLED, Height, Number row",
-                onClick = { onNavigate(SettingsScreen.KEYBOARD_PREFS) },
+                subtitle = "Puppy Pop, Strawberry Dessert, AMOLED, Dark, Light",
+                onClick = { onNavigate(SettingsScreen.THEME_LIBRARY) },
                 tag = "tile_theme"
             )
 
@@ -467,10 +476,38 @@ fun SettingsHomeScreen(
             SettingsTile(
                 icon = Icons.Default.Info,
                 title = "About NXV Keyboard",
-                subtitle = "Version 1.0.0, Architecture & Licenses",
+                subtitle = "Developed by Rony Ahmmad • Naxxivo",
                 onClick = { onNavigate(SettingsScreen.ABOUT) },
                 tag = "tile_about"
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Footer Branding
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "NXV Keyboard",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Official Brand: Naxxivo",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "© 2026 Naxxivo • All Rights Reserved.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -620,6 +657,8 @@ fun KeyboardPrefsScreen(
             // Theme Selector
             Text("Keyboard Theme", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             val themes = listOf(
+                "puppy_pop" to "Puppy Pop (Neumorphic White)",
+                "strawberry_dessert" to "Strawberry Dessert (Sweet Pink)",
                 "geometric" to "Geometric Balance (Default)",
                 "dark" to "Dark (Slate)",
                 "light" to "Light (Crisp)",
@@ -632,7 +671,7 @@ fun KeyboardPrefsScreen(
             ) {
                 Column(modifier = Modifier.padding(8.dp)) {
                     themes.forEach { (themeId, themeName) ->
-                        val isSelected = settings.theme == themeId
+                        val isSelected = settings.theme.equals(themeId, ignoreCase = true)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -863,14 +902,44 @@ fun SoundHapticScreen(
 
             SettingSwitchRow(
                 title = "Key Vibration",
-                subtitle = "Haptic vibration feedback on key press",
+                subtitle = if (settings.keyVibrationEnabled) "Haptic vibration feedback is ON" else "Haptic vibration feedback is OFF (Silent)",
                 checked = settings.keyVibrationEnabled,
                 onCheckedChange = onUpdateVibration
             )
 
+            // Quick Vibration Turn Off / Turn On Shortcut Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { onUpdateVibration(false) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (!settings.keyVibrationEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (!settings.keyVibrationEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("📴 Turn Vibration OFF", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
+
+                Button(
+                    onClick = { onUpdateVibration(true) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (settings.keyVibrationEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (settings.keyVibrationEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("📳 Turn Vibration ON", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+
             if (settings.keyVibrationEnabled) {
                 Text("Vibration Strength", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                val strengths = listOf("low" to "Low", "medium" to "Medium", "high" to "High")
+                val strengths = listOf("low" to "Low (Subtle)", "medium" to "Medium (Standard)", "high" to "High (Crisp)")
                 Card(
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
@@ -1654,6 +1723,8 @@ private fun PrivacyPoint(icon: String, title: String, description: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -1677,19 +1748,197 @@ fun AboutScreen(onBack: () -> Unit) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(76.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Keyboard, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(40.dp))
+                Icon(
+                    Icons.Default.Keyboard,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(44.dp)
+                )
             }
 
-            Text("NXV Keyboard", fontWeight = FontWeight.Bold, fontSize = 22.sp)
-            Text("Version 1.0.0 (Production Build)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("NXV Keyboard", fontWeight = FontWeight.Bold, fontSize = 24.sp)
+            Text(
+                "Version 1.0.0 (Production Build)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
+            // Brand & Ownership Card
             Card(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Official Brand",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "Naxxivo",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(0.5.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Owned & Developed By",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Rony Ahmmad",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Co-Owner & Developer",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Rony",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+
+            // Official Websites Card
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Official Websites",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    // Link 1: naxxivo.online
+                    Card(
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://naxxivo.online"))
+                                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(browserIntent)
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("🌐", fontSize = 18.sp)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text("naxxivo.online", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                    Text("Official Website Portal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    // Link 2: naxxivo.xyz
+                    Card(
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://naxxivo.xyz"))
+                                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(browserIntent)
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("🌐", fontSize = 18.sp)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text("naxxivo.xyz", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                    Text("Official Mirror Domain", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Architecture Highlights
+            Card(
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -1703,14 +1952,30 @@ fun AboutScreen(onBack: () -> Unit) {
                 }
             }
 
+            // Copyright Card
             Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Open Source Licenses", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                    Text("Built using modern Android Jetpack libraries, Kotlin Coroutines, Room, and Material 3 under the Apache 2.0 License.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "© 2026 Naxxivo",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "All Rights Reserved.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

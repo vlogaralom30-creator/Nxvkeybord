@@ -264,5 +264,54 @@ class ExampleRobolectricTest {
 
         db.close()
     }
+
+    @Test
+    fun `test theme system and palettes retrieval`() {
+        val puppy = com.example.theme.KeyboardThemes.getPalette("puppy_pop")
+        assertEquals("puppy_pop", puppy.themeId)
+        assertEquals("Puppy Pop White", puppy.themeName)
+        assertEquals(com.example.theme.ThemeSpecialIconStyle.PUPPY_MINIMAL, puppy.specialIconStyle)
+        assertEquals(com.example.theme.KeyPopupStyle.PUPPY_CHARACTER, puppy.popupStyle)
+
+        val strawberry = com.example.theme.KeyboardThemes.getPalette("strawberry_dessert")
+        assertEquals("strawberry_dessert", strawberry.themeId)
+        assertEquals("Strawberry Dessert", strawberry.themeName)
+        assertEquals(com.example.theme.ThemeSpecialIconStyle.STRAWBERRY_DESSERT, strawberry.specialIconStyle)
+        assertEquals(com.example.theme.KeyPopupStyle.STRAWBERRY_SWEET, strawberry.popupStyle)
+
+        val defaultTheme = com.example.theme.KeyboardThemes.getPalette("geometric")
+        assertEquals("geometric", defaultTheme.themeId)
+
+        // Verify all themes list contains the new themes
+        val allThemeIds = com.example.theme.KeyboardThemes.ALL_THEMES.map { it.themeId }
+        assertTrue(allThemeIds.contains("puppy_pop"))
+        assertTrue(allThemeIds.contains("strawberry_dessert"))
+        assertTrue(allThemeIds.contains("geometric"))
+    }
+
+    @Test
+    fun `test vibration and sound preferences updates`() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val prefs = com.example.data.preferences.KeyboardPreferences(context)
+
+        // Test vibration update
+        prefs.updateVibrationEnabled(false)
+        var current = prefs.settingsFlow.first()
+        assertFalse(current.keyVibrationEnabled)
+
+        prefs.updateVibrationEnabled(true)
+        current = prefs.settingsFlow.first()
+        assertTrue(current.keyVibrationEnabled)
+
+        // Test sound update
+        prefs.updateSoundEnabled(true)
+        current = prefs.settingsFlow.first()
+        assertTrue(current.keySoundEnabled)
+
+        prefs.updateSoundEnabled(false)
+        current = prefs.settingsFlow.first()
+        assertFalse(current.keySoundEnabled)
+    }
 }
+
 

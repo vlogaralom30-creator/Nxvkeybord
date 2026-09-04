@@ -67,6 +67,9 @@ fun KeyboardRootView(
     onDeleteCredential: (Long) -> Unit = {},
     onTogglePinCredential: (SavedCredential) -> Unit = {},
     onOpenSettings: () -> Unit,
+    onOpenThemes: (() -> Unit)? = null,
+    onToggleVibration: ((Boolean) -> Unit)? = null,
+    onToggleSound: ((Boolean) -> Unit)? = null,
     onUpdateOneHanded: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -76,6 +79,7 @@ fun KeyboardRootView(
 
     val view = LocalView.current
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var isToolbarExpanded by remember { mutableStateOf(false) }
 
     fun playFeedback() {
         feedbackManager.playKeySound(settings.keySoundEnabled)
@@ -111,6 +115,14 @@ fun KeyboardRootView(
                         autoSavePrompt = autoSavePrompt,
                         recentClip = clipboardItems.firstOrNull(),
                         clipboardCount = clipboardItems.size,
+                        isToolbarExpanded = isToolbarExpanded,
+                        keyVibrationEnabled = settings.keyVibrationEnabled,
+                        keySoundEnabled = settings.keySoundEnabled,
+                        oneHandedMode = settings.oneHandedMode,
+                        onToggleToolbar = {
+                            playFeedback()
+                            isToolbarExpanded = !isToolbarExpanded
+                        },
                         onSuggestionClick = {
                             playFeedback()
                             onSuggestionClicked(it)
@@ -127,6 +139,32 @@ fun KeyboardRootView(
                         onVaultClick = {
                             playFeedback()
                             onModeSwitch(KeyboardMode.VAULT)
+                        },
+                        onThemesClick = {
+                            playFeedback()
+                            onOpenThemes?.invoke() ?: onOpenSettings()
+                        },
+                        onToggleVibration = {
+                            val newVib = !settings.keyVibrationEnabled
+                            onToggleVibration?.invoke(newVib)
+                            if (newVib) {
+                                feedbackManager.performHapticFeedback(view, true, settings.vibrationStrength)
+                            }
+                        },
+                        onToggleSound = {
+                            val newSound = !settings.keySoundEnabled
+                            onToggleSound?.invoke(newSound)
+                            if (newSound) {
+                                feedbackManager.playKeySound(true)
+                            }
+                        },
+                        onToggleOneHanded = {
+                            val next = when (settings.oneHandedMode) {
+                                "none" -> "right"
+                                "right" -> "left"
+                                else -> "none"
+                            }
+                            onUpdateOneHanded(next)
                         },
                         onSettingsClick = {
                             onOpenSettings()
@@ -262,6 +300,10 @@ fun KeyboardRootView(
                                 keyHeight = keyHeight,
                                 palette = palette,
                                 enterLabel = enterLabel,
+                                showEmojiKey = settings.showEmojiKey,
+                                showLanguageKey = settings.showLanguageKey,
+                                showKeySubLabels = settings.showKeySubLabels,
+                                popupMode = if (settings.keyPreviewEnabled) settings.keyPopupMode else "disabled",
                                 onCharTyped = { char ->
                                     playFeedback()
                                     onCharTyped(char)
@@ -304,6 +346,10 @@ fun KeyboardRootView(
                                 keyHeight = keyHeight,
                                 palette = palette,
                                 enterLabel = enterLabel,
+                                showEmojiKey = settings.showEmojiKey,
+                                showLanguageKey = settings.showLanguageKey,
+                                showKeySubLabels = settings.showKeySubLabels,
+                                popupMode = if (settings.keyPreviewEnabled) settings.keyPopupMode else "disabled",
                                 onCharTyped = { char ->
                                     playFeedback()
                                     onCharTyped(char)
@@ -346,6 +392,10 @@ fun KeyboardRootView(
                                 keyHeight = keyHeight,
                                 palette = palette,
                                 enterLabel = enterLabel,
+                                showEmojiKey = settings.showEmojiKey,
+                                showLanguageKey = settings.showLanguageKey,
+                                showKeySubLabels = settings.showKeySubLabels,
+                                popupMode = if (settings.keyPreviewEnabled) settings.keyPopupMode else "disabled",
                                 onCharTyped = { char ->
                                     playFeedback()
                                     onCharTyped(char)
@@ -393,6 +443,10 @@ fun KeyboardRootView(
                                 keyHeight = keyHeight,
                                 palette = palette,
                                 enterLabel = enterLabel,
+                                showEmojiKey = settings.showEmojiKey,
+                                showLanguageKey = settings.showLanguageKey,
+                                showKeySubLabels = settings.showKeySubLabels,
+                                popupMode = if (settings.keyPreviewEnabled) settings.keyPopupMode else "disabled",
                                 onCharTyped = { char ->
                                     playFeedback()
                                     val isLetter = char.length == 1 && char[0].isLetter()

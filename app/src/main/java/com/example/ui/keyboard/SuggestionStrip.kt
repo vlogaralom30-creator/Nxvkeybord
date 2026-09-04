@@ -1,19 +1,28 @@
 package com.example.ui.keyboard
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,16 +56,25 @@ fun SuggestionStrip(
     autoSavePrompt: AutoSavePromptData? = null,
     recentClip: ClipboardItem? = null,
     clipboardCount: Int = 0,
+    isToolbarExpanded: Boolean = false,
+    keyVibrationEnabled: Boolean = true,
+    keySoundEnabled: Boolean = false,
+    oneHandedMode: String = "none",
+    onToggleToolbar: () -> Unit = {},
     onSuggestionClick: (SuggestionItem) -> Unit,
     onClipboardClick: () -> Unit,
     onQuickPaste: ((String) -> Unit)? = null,
     onVaultClick: () -> Unit = {},
+    onThemesClick: () -> Unit = {},
+    onToggleVibration: () -> Unit = {},
+    onToggleSound: () -> Unit = {},
+    onToggleOneHanded: () -> Unit = {},
     onSettingsClick: () -> Unit,
     onLanguageCycle: () -> Unit = {},
     onLanguageLongPress: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .background(palette.suggestionBarBackground)
@@ -66,7 +84,7 @@ fun SuggestionStrip(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(46.dp)
+                    .height(44.dp)
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -81,7 +99,7 @@ fun SuggestionStrip(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Save pass for ${autoSavePrompt.serviceName}?",
+                        text = "Save password for ${autoSavePrompt.serviceName}?",
                         color = palette.textColor,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -128,81 +146,72 @@ fun SuggestionStrip(
                 }
             }
         } else {
+            // 1. Main Top Row: Chevron (^) Expander on the left + Spacious 100% Suggestions Area
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(46.dp)
-                    .padding(horizontal = 6.dp),
+                    .height(42.dp)
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Quick Toolbar icons (Clipboard, Vault)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(end = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                // Expand / Collapse Chevron Button (^)
+                Box(
+                    modifier = Modifier
+                        .padding(start = 2.dp, end = 4.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (isToolbarExpanded) palette.accentColor.copy(alpha = 0.20f)
+                            else palette.keyActionBackground.copy(alpha = 0.65f)
+                        )
+                        .border(
+                            width = 0.8.dp,
+                            color = if (isToolbarExpanded) palette.accentColor.copy(alpha = 0.5f) else palette.keyBorderColor.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable { onToggleToolbar() }
+                        .padding(horizontal = 8.dp, vertical = 5.dp)
+                        .testTag("toolbar_expand_toggle"),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(
-                                if (clipboardCount > 0) palette.accentColor.copy(alpha = 0.12f)
-                                else Color.Transparent
-                            )
-                            .clickable { onClipboardClick() }
-                            .padding(horizontal = 6.dp, vertical = 5.dp)
-                            .testTag("toolbar_clipboard"),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
-                        ) {
-                            Text(
-                                text = "📋",
-                                fontSize = 13.sp
-                            )
-                            Text(
-                                text = if (clipboardCount > 0) "Clipboard ($clipboardCount)" else "Clipboard",
-                                color = if (clipboardCount > 0) palette.accentColor else palette.textColor,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium
+                        Text(
+                            text = if (isToolbarExpanded) "⌄" else "⌃",
+                            color = if (isToolbarExpanded) palette.accentColor else palette.textColor,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (!isToolbarExpanded && clipboardCount > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .size(5.dp)
+                                    .clip(CircleShape)
+                                    .background(palette.accentColor)
                             )
                         }
                     }
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { onVaultClick() }
-                            .padding(horizontal = 5.dp, vertical = 6.dp)
-                            .testTag("toolbar_vault"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "🔐",
-                            fontSize = 14.sp
-                        )
-                    }
                 }
 
-                // Suggestions List (Scrollable if many, fills available width)
+                // Suggestions Area (Takes full remaining space)
                 Row(
                     modifier = Modifier
                         .weight(1f)
                         .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Quick Paste chip for the latest copied fragment
-                    if (recentClip != null && onQuickPaste != null) {
-                        val preview = if (recentClip.text.length > 18) recentClip.text.take(18) + "…" else recentClip.text
+                    // Quick Paste chip when clipboard has content and no suggestions yet
+                    if (recentClip != null && onQuickPaste != null && suggestions.isEmpty()) {
+                        val preview = if (recentClip.text.length > 22) recentClip.text.take(22) + "…" else recentClip.text
                         Box(
                             modifier = Modifier
                                 .padding(horizontal = 3.dp, vertical = 2.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(palette.accentColor.copy(alpha = 0.16f))
                                 .clickable { onQuickPaste(recentClip.text) }
-                                .padding(horizontal = 7.dp, vertical = 4.dp)
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                                 .testTag("toolbar_quick_paste_chip"),
                             contentAlignment = Alignment.Center
                         ) {
@@ -210,11 +219,11 @@ fun SuggestionStrip(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
-                                Text("📋", fontSize = 10.sp)
+                                Text("📋", fontSize = 11.sp)
                                 Text(
                                     text = "Paste \"$preview\"",
                                     color = palette.accentColor,
-                                    fontSize = 11.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -226,10 +235,10 @@ fun SuggestionStrip(
                     if (suggestions.isEmpty() && recentClip == null) {
                         Text(
                             text = "NXV Keyboard",
-                            color = palette.secondaryTextColor.copy(alpha = 0.6f),
+                            color = palette.secondaryTextColor.copy(alpha = 0.5f),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(start = 8.dp)
+                            modifier = Modifier.padding(start = 6.dp)
                         )
                     } else {
                         suggestions.forEachIndexed { index, item ->
@@ -237,14 +246,13 @@ fun SuggestionStrip(
 
                             Box(
                                 modifier = Modifier
-                                    .padding(horizontal = 3.dp, vertical = 3.dp)
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(
-                                        if (isPrimary) palette.accentColor.copy(alpha = 0.14f)
+                                        if (isPrimary) palette.accentColor.copy(alpha = 0.16f)
                                         else Color.Transparent
                                     )
                                     .clickable { onSuggestionClick(item) }
-                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
                                     .testTag("suggestion_$index"),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -252,7 +260,7 @@ fun SuggestionStrip(
                                     text = item.displayText,
                                     color = if (isPrimary) palette.accentColor else palette.textColor,
                                     fontSize = 14.sp,
-                                    fontWeight = if (isPrimary) FontWeight.SemiBold else FontWeight.Normal,
+                                    fontWeight = if (isPrimary) FontWeight.Bold else FontWeight.Normal,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -263,73 +271,184 @@ fun SuggestionStrip(
                                     modifier = Modifier
                                         .height(16.dp)
                                         .width(1.dp)
-                                        .background(palette.dividerColor)
+                                        .background(palette.dividerColor.copy(alpha = 0.45f))
                                 )
                             }
                         }
                     }
                 }
+            }
 
-                // Language toggle pill
-                val langBadgeText = when (currentLanguage.lowercase()) {
-                    "bangla" -> "বাংলা"
-                    "avro" -> "অভ্র"
-                    else -> "EN"
-                }
-                Box(
+            // 2. Middle Layer: Dedicated Action Bar when expanded
+            AnimatedVisibility(
+                visible = isToolbarExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
                     modifier = Modifier
-                        .padding(end = 3.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(palette.accentColor.copy(alpha = 0.15f))
-                        .combinedClickable(
-                            onClick = { onLanguageCycle() },
-                            onLongClick = { onLanguageLongPress() }
-                        )
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
-                        .testTag("toolbar_language_toggle"),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .background(palette.keyActionBackground.copy(alpha = 0.35f))
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(0.5.dp)
+                            .background(palette.dividerColor.copy(alpha = 0.35f))
+                    )
+
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "🌐",
-                            fontSize = 11.sp
+                        // 1. Copypad / Clipboard Action
+                        ActionToolChip(
+                            icon = "📋",
+                            label = if (clipboardCount > 0) "Clipboard ($clipboardCount)" else "Clipboard",
+                            palette = palette,
+                            isActive = clipboardCount > 0,
+                            tag = "toolbar_clipboard",
+                            onClick = onClipboardClick
                         )
-                        Text(
-                            text = langBadgeText,
-                            color = palette.accentColor,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
+
+                        // 2. Password Vault Action
+                        ActionToolChip(
+                            icon = "🔐",
+                            label = "Vault",
+                            palette = palette,
+                            tag = "toolbar_vault",
+                            onClick = onVaultClick
+                        )
+
+                        // 3. Theme Library Action
+                        ActionToolChip(
+                            icon = "🎨",
+                            label = "Themes",
+                            palette = palette,
+                            tag = "toolbar_themes",
+                            onClick = onThemesClick
+                        )
+
+                        // 4. Language Switcher Action
+                        val langLabel = when (currentLanguage.lowercase()) {
+                            "bangla" -> "বাংলা"
+                            "avro" -> "অভ্র"
+                            else -> "English"
+                        }
+                        ActionToolChip(
+                            icon = "🌐",
+                            label = langLabel,
+                            palette = palette,
+                            tag = "toolbar_language_toggle",
+                            onClick = onLanguageCycle,
+                            onLongClick = onLanguageLongPress
+                        )
+
+                        // 5. Vibration / Haptics Toggle Action
+                        ActionToolChip(
+                            icon = if (keyVibrationEnabled) "📳" else "📴",
+                            label = if (keyVibrationEnabled) "Vibration ON" else "Vibration OFF",
+                            palette = palette,
+                            isActive = keyVibrationEnabled,
+                            tag = "toolbar_toggle_vibration",
+                            onClick = onToggleVibration
+                        )
+
+                        // 6. Sound Toggle Action
+                        ActionToolChip(
+                            icon = if (keySoundEnabled) "🔊" else "🔇",
+                            label = if (keySoundEnabled) "Sound ON" else "Sound OFF",
+                            palette = palette,
+                            isActive = keySoundEnabled,
+                            tag = "toolbar_toggle_sound",
+                            onClick = onToggleSound
+                        )
+
+                        // 7. One-Handed Mode Action
+                        val oneHandLabel = when (oneHandedMode) {
+                            "right" -> "Right Hand"
+                            "left" -> "Left Hand"
+                            else -> "Full Width"
+                        }
+                        ActionToolChip(
+                            icon = "📱",
+                            label = oneHandLabel,
+                            palette = palette,
+                            isActive = oneHandedMode != "none",
+                            tag = "toolbar_one_handed",
+                            onClick = onToggleOneHanded
+                        )
+
+                        // 8. Settings Action
+                        ActionToolChip(
+                            icon = "⚙️",
+                            label = "Settings",
+                            palette = palette,
+                            tag = "toolbar_settings",
+                            onClick = onSettingsClick
                         )
                     }
-                }
-
-                // Quick Settings Gear icon
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .clickable { onSettingsClick() }
-                        .padding(horizontal = 5.dp, vertical = 6.dp)
-                        .testTag("toolbar_settings"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "⚙️",
-                        fontSize = 14.sp
-                    )
                 }
             }
         }
 
-        // Bottom border line for geometric structure
+        // Bottom border line for geometric precision
         Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .height(0.5.dp)
                 .background(palette.dividerColor.copy(alpha = 0.35f))
         )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ActionToolChip(
+    icon: String,
+    label: String,
+    palette: KeyboardPalette,
+    isActive: Boolean = false,
+    tag: String,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                if (isActive) palette.accentColor.copy(alpha = 0.15f)
+                else palette.keyBackground
+            )
+            .border(
+                width = 0.8.dp,
+                color = if (isActive) palette.accentColor.copy(alpha = 0.4f) else palette.keyBorderColor.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
+            .padding(horizontal = 9.dp, vertical = 6.dp)
+            .testTag(tag),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(text = icon, fontSize = 13.sp)
+            Text(
+                text = label,
+                color = if (isActive) palette.accentColor else palette.textColor,
+                fontSize = 12.sp,
+                fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal
+            )
+        }
     }
 }
