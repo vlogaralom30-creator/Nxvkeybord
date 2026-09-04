@@ -10,7 +10,8 @@ enum class KeyboardMode {
     CLIPBOARD,
     VAULT,
     TEXT_EDIT,
-    NUMBER_PAD
+    NUMBER_PAD,
+    VOICE
 }
 
 enum class OneHandedMode(val modeKey: String) {

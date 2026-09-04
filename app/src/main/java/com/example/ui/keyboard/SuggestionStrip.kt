@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Smartphone
@@ -85,7 +86,9 @@ fun SuggestionStrip(
     onVaultClick: () -> Unit = {},
     onTextEditClick: () -> Unit = {},
     onNumberPadClick: () -> Unit = {},
+    onVoiceClick: () -> Unit = {},
     onThemesClick: () -> Unit = {},
+    onThemesLongClick: () -> Unit = {},
     onToggleVibration: () -> Unit = {},
     onToggleSound: () -> Unit = {},
     onToggleOneHanded: () -> Unit = {},
@@ -179,7 +182,7 @@ fun SuggestionStrip(
                 // Expand / Collapse Chevron Button
                 Box(
                     modifier = Modifier
-                        .padding(start = 2.dp, end = 4.dp)
+                        .padding(start = 2.dp, end = 2.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(
                             if (isToolbarExpanded) palette.accentColor.copy(alpha = 0.20f)
@@ -214,6 +217,30 @@ fun SuggestionStrip(
                             )
                         }
                     }
+                }
+
+                // Voice Mic Button (Quick Access on Collapsed Toolbar)
+                Box(
+                    modifier = Modifier
+                        .padding(start = 2.dp, end = 4.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(palette.accentColor.copy(alpha = 0.18f))
+                        .border(
+                            width = 0.8.dp,
+                            color = palette.accentColor.copy(alpha = 0.45f),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable { onVoiceClick() }
+                        .padding(horizontal = 7.dp, vertical = 5.dp)
+                        .testTag("toolbar_voice_quick_button"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "Voice Typing",
+                        tint = palette.accentColor,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
 
                 // Suggestions Area (Takes full remaining space)
@@ -333,7 +360,17 @@ fun SuggestionStrip(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // 1. Copypad / Clipboard Action
+                        // 1. Voice Typing Action
+                        ActionToolChip(
+                            icon = Icons.Default.Mic,
+                            label = "Voice",
+                            palette = palette,
+                            isActive = true,
+                            tag = "toolbar_voice_typing",
+                            onClick = onVoiceClick
+                        )
+
+                        // 2. Copypad / Clipboard Action
                         ActionToolChip(
                             icon = Icons.Default.ContentPaste,
                             label = if (clipboardCount > 0) "Clipboard ($clipboardCount)" else "Clipboard",
@@ -376,7 +413,8 @@ fun SuggestionStrip(
                             label = "Themes",
                             palette = palette,
                             tag = "toolbar_themes",
-                            onClick = onThemesClick
+                            onClick = onThemesClick,
+                            onLongClick = onThemesLongClick
                         )
 
                         // 4. Language Switcher Action

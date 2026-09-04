@@ -11,11 +11,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -83,6 +93,7 @@ fun KeyboardRootView(
     onPasteText: () -> Unit = {},
     onOpenSettings: () -> Unit,
     onOpenThemes: (() -> Unit)? = null,
+    onUpdateTheme: ((String) -> Unit)? = null,
     onToggleVibration: ((Boolean) -> Unit)? = null,
     onToggleSound: ((Boolean) -> Unit)? = null,
     onUpdateOneHanded: (String) -> Unit,
@@ -101,6 +112,7 @@ fun KeyboardRootView(
     val view = LocalView.current
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showLanguageSlider by remember { mutableStateOf(false) }
+    var showThemeGridPicker by remember { mutableStateOf(false) }
     var isToolbarExpanded by remember { mutableStateOf(false) }
     var holdProgress by remember { mutableFloatStateOf(0f) }
 
@@ -296,9 +308,20 @@ fun KeyboardRootView(
                                     playFeedback()
                                     onModeSwitch(KeyboardMode.NUMBER_PAD)
                                 },
+                                onVoiceClick = {
+                                    playFeedback()
+                                    onModeSwitch(KeyboardMode.VOICE)
+                                },
                                 onThemesClick = {
                                     playFeedback()
-                                    onOpenThemes?.invoke() ?: onOpenSettings()
+                                    val allThemes = KeyboardThemes.ALL_THEMES
+                                    val otherThemes = allThemes.filter { !it.themeId.equals(settings.theme, ignoreCase = true) }
+                                    val randomTheme = (if (otherThemes.isNotEmpty()) otherThemes else allThemes).random()
+                                    onUpdateTheme?.invoke(randomTheme.themeId)
+                                },
+                                onThemesLongClick = {
+                                    playFeedback()
+                                    showThemeGridPicker = true
                                 },
                                 onToggleVibration = {
                                     val newVib = !settings.keyVibrationEnabled
@@ -522,6 +545,45 @@ fun KeyboardRootView(
                                                 else -> KeyboardMode.ENGLISH
                                             }
                                         )
+                                    }
+                                )
+                            }
+
+                            KeyboardMode.VOICE -> {
+                                VoiceTypingKeyboardLayout(
+                                    currentLanguage = settings.currentLanguage,
+                                    palette = palette,
+                                    onCharTyped = { char ->
+                                        playFeedback()
+                                        onCharTyped(char)
+                                    },
+                                    onDelete = {
+                                        playFeedback()
+                                        onDelete()
+                                    },
+                                    onSpace = {
+                                        playFeedback()
+                                        onSpace()
+                                    },
+                                    onEnter = {
+                                        playFeedback()
+                                        onEnter()
+                                    },
+                                    onLanguageSelected = { lang ->
+                                        onLanguageSelected(lang)
+                                    },
+                                    onClose = {
+                                        playFeedback()
+                                        onModeSwitch(
+                                            when (settings.currentLanguage) {
+                                                "bangla" -> KeyboardMode.BANGLA
+                                                "avro" -> KeyboardMode.AVRO
+                                                else -> KeyboardMode.ENGLISH
+                                            }
+                                        )
+                                    },
+                                    onOpenSettingsForPermission = {
+                                        onOpenSettings()
                                     }
                                 )
                             }
@@ -813,6 +875,180 @@ fun KeyboardRootView(
                     showLanguageDialog = false
                 }
             )
+        }
+
+        // Live Theme Quick Picker (2-Column Grid Modal)
+        if (showThemeGridPicker) {
+            ThemeQuickPickerGrid(
+                currentThemeId = settings.theme,
+                onSelectTheme = { themeId ->
+                    playFeedback()
+                    onUpdateTheme?.invoke(themeId)
+                },
+                onDismiss = {
+                    showThemeGridPicker = false
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThemeQuickPickerGrid(
+    currentThemeId: String,
+    onSelectTheme: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val allThemes = KeyboardThemes.ALL_THEMES
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.65f))
+            .clickable { onDismiss() },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .clickable(enabled = false) {}
+                .padding(16.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Modal Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "🎨 Pick Keyboard Theme",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Tap any theme to switch live on keyboard",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { onDismiss() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "✕",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // 2-Column Grid of Available Themes
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 290.dp)
+                ) {
+                    items(allThemes, key = { it.themeId }) { palette ->
+                        val isSelected = palette.themeId.equals(currentThemeId, ignoreCase = true)
+                        Card(
+                            onClick = {
+                                onSelectTheme(palette.themeId)
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(
+                                width = if (isSelected) 2.dp else 1.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                // 4 Color Swatch Chips Preview
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(20.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(palette.keyboardBackground),
+                                    horizontalArrangement = Arrangement.SpaceEvenly,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(12.dp)
+                                            .clip(CircleShape)
+                                            .background(palette.keyBackground)
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(12.dp)
+                                            .clip(CircleShape)
+                                            .background(palette.accentColor)
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(12.dp)
+                                            .clip(CircleShape)
+                                            .background(palette.textColor)
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = palette.themeName,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1
+                                    )
+                                    if (isSelected) {
+                                        Text(
+                                            text = "✓",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    text = palette.category,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -299,6 +299,12 @@ class NXVInputMethodService : InputMethodService(),
                         }
                         startActivity(intent)
                     },
+                    onUpdateTheme = { theme ->
+                        serviceScope.launch {
+                            val app = application as? NXVApplication ?: NXVApplication.instance
+                            app.preferences.updateTheme(theme)
+                        }
+                    },
                     onToggleVibration = { enabled ->
                         serviceScope.launch {
                             val app = application as? NXVApplication ?: NXVApplication.instance
