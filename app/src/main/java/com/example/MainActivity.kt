@@ -30,7 +30,9 @@ import com.example.data.entity.SavedCredential
 import com.example.data.entity.TextShortcut
 import com.example.data.preferences.KeyboardSettings
 import com.example.ui.settings.AboutScreen
+import com.example.ui.settings.BackupRestoreScreen
 import com.example.ui.settings.ClipboardPrefsScreen
+import com.example.ui.settings.CustomThemeStudioScreen
 import com.example.ui.settings.DictionaryScreen
 import com.example.ui.settings.KeyboardCustomizeScreen
 import com.example.ui.settings.KeyboardPrefsScreen
@@ -40,7 +42,9 @@ import com.example.ui.settings.SettingsHomeScreen
 import com.example.ui.settings.SettingsScreen
 import com.example.ui.settings.ShortcutsScreen
 import com.example.ui.settings.SoundHapticScreen
+import com.example.ui.settings.SystemDiagnosticsScreen
 import com.example.ui.settings.ThemeLibraryScreen
+import com.example.ui.settings.TypingAnalyticsScreen
 import com.example.ui.settings.TypingPrefsScreen
 import com.example.ui.settings.VaultPrefsScreen
 import com.example.ui.theme.MyApplicationTheme
@@ -85,6 +89,9 @@ class MainActivity : ComponentActivity() {
                     val savedCredentials by app.repository.savedCredentials.collectAsState(initial = emptyList())
                     val dictionaryWords by app.repository.allDictionaryWords.collectAsState(initial = emptyList())
                     val shortcuts by app.repository.shortcuts.collectAsState(initial = emptyList())
+                    val letterStats by app.repository.letterUsageStats.collectAsState(initial = emptyList())
+                    val wordStats by app.repository.wordUsageStats.collectAsState(initial = emptyList())
+                    val textLogs by app.repository.recentLongTextLogs.collectAsState(initial = emptyList())
 
                     val initialTarget = remember {
                         when (intent?.getStringExtra("NAVIGATE_TO")) {
@@ -134,6 +141,12 @@ class MainActivity : ComponentActivity() {
                                     settings = settings,
                                     isKeyboardEnabled = isKeyboardEnabled,
                                     isKeyboardSelected = isKeyboardSelected,
+                                    onSelectTheme = { themeId ->
+                                        scope.launch { app.preferences.updateTheme(themeId) }
+                                    },
+                                    onUpdateUiMode = { mode ->
+                                        scope.launch { app.preferences.updateUiMode(mode) }
+                                    },
                                     onNavigate = { target -> currentScreen = target }
                                 )
                             }
@@ -141,8 +154,109 @@ class MainActivity : ComponentActivity() {
                             SettingsScreen.THEME_LIBRARY -> {
                                 ThemeLibraryScreen(
                                     currentThemeId = settings.theme,
+                                    currentUiMode = settings.uiMode,
                                     onSelectTheme = { themeId ->
                                         scope.launch { app.preferences.updateTheme(themeId) }
+                                    },
+                                    onUpdateUiMode = { mode ->
+                                        scope.launch { app.preferences.updateUiMode(mode) }
+                                    },
+                                    onNavigateToThemeStudio = {
+                                        currentScreen = SettingsScreen.CUSTOM_THEME_STUDIO
+                                    },
+                                    onBack = { currentScreen = SettingsScreen.HOME }
+                                )
+                            }
+
+                            SettingsScreen.CUSTOM_THEME_STUDIO -> {
+                                CustomThemeStudioScreen(
+                                    settings = settings,
+                                    onUpdateCustomThemeEnabled = { enabled ->
+                                        scope.launch { app.preferences.updateCustomThemeEnabled(enabled) }
+                                    },
+                                    onUpdateCustomKeyboardBg = { color ->
+                                        scope.launch { app.preferences.updateCustomKeyboardBg(color) }
+                                    },
+                                    onUpdateCustomKeyBg = { color ->
+                                        scope.launch { app.preferences.updateCustomKeyBg(color) }
+                                    },
+                                    onUpdateCustomKeyActionBg = { color ->
+                                        scope.launch { app.preferences.updateCustomKeyActionBg(color) }
+                                    },
+                                    onUpdateCustomTextColor = { color ->
+                                        scope.launch { app.preferences.updateCustomTextColor(color) }
+                                    },
+                                    onUpdateCustomSecondaryTextColor = { color ->
+                                        scope.launch { app.preferences.updateCustomSecondaryTextColor(color) }
+                                    },
+                                    onUpdateCustomAccentColor = { color ->
+                                        scope.launch { app.preferences.updateCustomAccentColor(color) }
+                                    },
+                                    onUpdateCustomSuggestionBg = { color ->
+                                        scope.launch { app.preferences.updateCustomSuggestionBg(color) }
+                                    },
+                                    onUpdateCustomBackgroundImageUri = { uri ->
+                                        scope.launch { app.preferences.updateCustomBackgroundImageUri(uri) }
+                                    },
+                                    onUpdateCustomBackgroundDim = { dim ->
+                                        scope.launch { app.preferences.updateCustomBackgroundDim(dim) }
+                                    },
+                                    onUpdateCustomBackgroundBlur = { blur ->
+                                        scope.launch { app.preferences.updateCustomBackgroundBlur(blur) }
+                                    },
+                                    onUpdateCustomIconStyle = { style ->
+                                        scope.launch { app.preferences.updateCustomIconStyle(style) }
+                                    },
+                                    onUpdateCustomKeyBorderWidthDp = { width ->
+                                        scope.launch { app.preferences.updateCustomKeyBorderWidthDp(width) }
+                                    },
+                                    onUpdateCustomKeyBorderColor = { color ->
+                                        scope.launch { app.preferences.updateCustomKeyBorderColor(color) }
+                                    },
+                                    onUpdateKeyElevationDp = { elev ->
+                                        scope.launch { app.preferences.updateKeyElevationDp(elev) }
+                                    },
+                                    onUpdateKeyboardHeightRatio = { h ->
+                                        scope.launch { app.preferences.updateKeyboardHeightRatio(h) }
+                                    },
+                                    onUpdateKeyboardWidthRatio = { w ->
+                                        scope.launch { app.preferences.updateKeyboardWidthRatio(w) }
+                                    },
+                                    onUpdateKeyCornerRadiusDp = { r ->
+                                        scope.launch { app.preferences.updateKeyCornerRadiusDp(r) }
+                                    },
+                                    onUpdateKeyVerticalGapDp = { g ->
+                                        scope.launch { app.preferences.updateKeyVerticalGapDp(g) }
+                                    },
+                                    onUpdateKeyHorizontalGapDp = { g ->
+                                        scope.launch { app.preferences.updateKeyHorizontalGapDp(g) }
+                                    },
+                                    onUpdateKeyboardSideMarginDp = { m ->
+                                        scope.launch { app.preferences.updateKeyboardSideMarginDp(m) }
+                                    },
+                                    onUpdateKeyboardBottomMarginDp = { m ->
+                                        scope.launch { app.preferences.updateKeyboardBottomMarginDp(m) }
+                                    },
+                                    onUpdateKeyFontSizeRatio = { s ->
+                                        scope.launch { app.preferences.updateKeyFontSizeRatio(s) }
+                                    },
+                                    onUpdateEnabledShortcuts = { shortcuts ->
+                                        scope.launch { app.preferences.updateEnabledShortcuts(shortcuts) }
+                                    },
+                                    onUpdateShortcutOrder = { order ->
+                                        scope.launch { app.preferences.updateShortcutOrder(order) }
+                                    },
+                                    onUpdateShowSuggestionMic = { show ->
+                                        scope.launch { app.preferences.updateShowSuggestionMic(show) }
+                                    },
+                                    onUpdateShowSuggestionVideo = { show ->
+                                        scope.launch { app.preferences.updateShowSuggestionVideo(show) }
+                                    },
+                                    onUpdateShowQuickPaste = { show ->
+                                        scope.launch { app.preferences.updateShowQuickPaste(show) }
+                                    },
+                                    onUpdateToolbarPosition = { pos ->
+                                        scope.launch { app.preferences.updateToolbarPosition(pos) }
                                     },
                                     onBack = { currentScreen = SettingsScreen.HOME }
                                 )
@@ -205,6 +319,12 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onUpdateHeightRatio = { height ->
                                         scope.launch { app.preferences.updateKeyboardHeightRatio(height) }
+                                    },
+                                    onUpdateWidthRatio = { width ->
+                                        scope.launch { app.preferences.updateKeyboardWidthRatio(width) }
+                                    },
+                                    onNavigateToThemeStudio = {
+                                        currentScreen = SettingsScreen.CUSTOM_THEME_STUDIO
                                     },
                                     onBack = { currentScreen = SettingsScreen.HOME }
                                 )
@@ -305,6 +425,37 @@ class MainActivity : ComponentActivity() {
                                     onClearAll = {
                                         scope.launch { app.repository.clearAllCredentials() }
                                     },
+                                    onBack = { currentScreen = SettingsScreen.HOME }
+                                )
+                            }
+
+                            SettingsScreen.TYPING_ANALYTICS -> {
+                                TypingAnalyticsScreen(
+                                    settings = settings,
+                                    repository = app.repository,
+                                    letters = letterStats,
+                                    words = wordStats,
+                                    textLogs = textLogs,
+                                    onResetOpenCount = {
+                                        scope.launch { app.preferences.resetKeyboardOpenCount() }
+                                    },
+                                    onBack = { currentScreen = SettingsScreen.HOME }
+                                )
+                            }
+
+                            SettingsScreen.BACKUP_RESTORE -> {
+                                BackupRestoreScreen(
+                                    settings = settings,
+                                    preferences = app.preferences,
+                                    repository = app.repository,
+                                    onBack = { currentScreen = SettingsScreen.HOME }
+                                )
+                            }
+
+                            SettingsScreen.SYSTEM_DIAGNOSTICS -> {
+                                SystemDiagnosticsScreen(
+                                    repository = app.repository,
+                                    preferences = app.preferences,
                                     onBack = { currentScreen = SettingsScreen.HOME }
                                 )
                             }

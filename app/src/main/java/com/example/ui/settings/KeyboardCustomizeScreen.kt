@@ -1,5 +1,6 @@
 package com.example.ui.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,9 +68,12 @@ fun KeyboardCustomizeScreen(
     onUpdateKeyPopupMode: (String) -> Unit,
     onUpdateShowNumberRow: (Boolean) -> Unit,
     onUpdateHeightRatio: (Float) -> Unit,
+    onUpdateWidthRatio: ((Float) -> Unit)? = null,
+    onUpdateCornerRadius: ((Int) -> Unit)? = null,
+    onNavigateToThemeStudio: (() -> Unit)? = null,
     onBack: () -> Unit
 ) {
-    val palette: KeyboardPalette = remember(settings.theme) { KeyboardThemes.getPalette(settings.theme) }
+    val palette: KeyboardPalette = remember(settings.theme) { KeyboardThemes.getPalette(settings.theme, settings) }
     var previewShift by remember { mutableStateOf(ShiftState.LOWERCASE) }
 
     Scaffold(
@@ -135,7 +139,8 @@ fun KeyboardCustomizeScreen(
                     // Mini Keyboard Preview Canvas
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxWidth(settings.keyboardWidthRatio)
+                            .align(Alignment.CenterHorizontally)
                             .clip(RoundedCornerShape(12.dp))
                             .background(palette.keyboardBackground)
                             .padding(horizontal = 4.dp, vertical = 6.dp)
@@ -168,6 +173,32 @@ fun KeyboardCustomizeScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            }
+
+            // Banner to Open Full Theme & Studio Screen
+            if (onNavigateToThemeStudio != null) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToThemeStudio() }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("🎨 Custom Theme & Layout Studio", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Text("নিজের পছন্দের ব্যাকগ্রাউন্ড কালার, ফটো আপলোড, সাইজ % ও শর্টকাট বাটন সাজান", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(20.dp))
+                    }
                 }
             }
 
@@ -278,8 +309,8 @@ fun KeyboardCustomizeScreen(
                 }
             }
 
-            // Section 4: Keyboard Height
-            SectionHeader(title = "KEYBOARD HEIGHT (কিবোর্ড উচ্চতা)")
+            // Section 4: Keyboard Height & Sizing %
+            SectionHeader(title = "KEYBOARD SIZING % (কিবোর্ড সাইজ ও স্কেলিং)")
 
             Card(
                 shape = RoundedCornerShape(14.dp),
@@ -291,7 +322,7 @@ fun KeyboardCustomizeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Height Scale", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                        Text("Up-to-Down Height Size %", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                         Text(
                             text = "${(settings.keyboardHeightRatio * 100).toInt()}%",
                             color = MaterialTheme.colorScheme.primary,
@@ -302,18 +333,29 @@ fun KeyboardCustomizeScreen(
                     Slider(
                         value = settings.keyboardHeightRatio,
                         onValueChange = { onUpdateHeightRatio(it) },
-                        valueRange = 0.8f..1.3f,
-                        steps = 5,
+                        valueRange = 0.75f..1.35f,
                         modifier = Modifier.testTag("slider_keyboard_height")
                     )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Compact (80%)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Standard (100%)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Tall (130%)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (onUpdateWidthRatio != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Side Width Size %", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                            Text(
+                                text = "${(settings.keyboardWidthRatio * 100).toInt()}%",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Slider(
+                            value = settings.keyboardWidthRatio,
+                            onValueChange = { onUpdateWidthRatio(it) },
+                            valueRange = 0.70f..1.0f
+                        )
                     }
                 }
             }

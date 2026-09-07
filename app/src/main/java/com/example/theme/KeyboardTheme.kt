@@ -3,13 +3,17 @@ package com.example.theme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.data.preferences.KeyboardSettings
 
 enum class ThemeSpecialIconStyle {
     STANDARD,
     PUPPY_MINIMAL,
     STRAWBERRY_DESSERT,
     KAWAII_KITTEN,
-    RETRO_MECH
+    RETRO_MECH,
+    REFERENCE_MINIMAL,
+    RGB_NEON,
+    CAT_3D_SLATE
 }
 
 enum class KeyPopupStyle {
@@ -17,7 +21,9 @@ enum class KeyPopupStyle {
     PUPPY_CHARACTER,
     STRAWBERRY_SWEET,
     KAWAII_KITTY_POPUP,
-    RETRO_MECH_POPUP
+    RETRO_MECH_POPUP,
+    RGB_NEON_POPUP,
+    CAT_3D_SLATE_POPUP
 }
 
 enum class SpacebarStyle {
@@ -25,7 +31,10 @@ enum class SpacebarStyle {
     PUPPY_BRACKET,
     STRAWBERRY_PILL,
     KITTY_PAW_BAR,
-    RETRO_MECH_SPACE
+    RETRO_MECH_SPACE,
+    REFERENCE_MINIMAL_SPACE,
+    RGB_NEON_BAR,
+    CAT_3D_SLATE_BAR
 }
 
 data class KeyboardPalette(
@@ -327,7 +336,332 @@ object KeyboardThemes {
         )
     )
 
+    // RGB Chroma Neon (Pitch black AMOLED keys with vivid rainbow neon borders, glow typography & type effects)
+    val RgbChroma = KeyboardPalette(
+        themeId = "rgb_neon",
+        themeName = "RGB Chroma Neon",
+        themeDescription = "Vibrant rainbow neon glowing borders across jet-black keys with dynamic RGB typing wave and neon burst effects",
+        category = "Featured & RGB",
+        keyboardBackground = Color(0xFF000000), // Pitch black AMOLED
+        keyBackground = Color(0xFF080808), // Sleek deep black key face
+        keyPressedBackground = Color(0xFF1E1E24), // Illuminated neon glow keypress
+        keyActionBackground = Color(0xFF0A0A0A),
+        textColor = Color(0xFF39FF14), // Dynamic RGB column color
+        secondaryTextColor = Color(0xFF38BDF8),
+        accentColor = Color(0xFF00F0FF), // Electric cyan accent
+        onAccentColor = Color(0xFF000000),
+        suggestionBarBackground = Color(0xFF050505),
+        suggestionHighlightColor = Color(0xFF00F0FF),
+        dividerColor = Color(0xFF18181B),
+        keyBorderColor = Color(0xFF39FF14), // Dynamic RGB spectrum border
+        keyBorderWidth = 1.8.dp, // Distinct crisp glowing neon border
+        keyCornerRadius = 9.dp, // Modern rounded box matching reference
+        keyElevation = 0.dp,
+        pressedElevation = 0.dp,
+        specialIconStyle = ThemeSpecialIconStyle.RGB_NEON,
+        popupStyle = KeyPopupStyle.RGB_NEON_POPUP,
+        spacebarStyle = SpacebarStyle.RGB_NEON_BAR,
+        spacebarWatermark = null,
+        showTopRowHints = false,
+        topRowHintColor = Color(0xFF64748B),
+        previewColors = listOf(
+            Color(0xFF000000),
+            Color(0xFF39FF14),
+            Color(0xFF00F0FF),
+            Color(0xFFA855F7),
+            Color(0xFFEF4444)
+        )
+    )
+
+    // Reference Minimal (Ultra-clean minimalist white interface with dual UI mode support)
+    val ReferenceMinimal = KeyboardPalette(
+        themeId = "reference_minimal",
+        themeName = "Reference Minimal",
+        themeDescription = "Ultra-clean minimalist white interface with razor-thin borders, geometric typography, and dual-mode architecture",
+        category = "Light & Clean",
+        keyboardBackground = Color(0xFFFFFFFF),
+        keyBackground = Color(0xFFFFFFFF),
+        keyPressedBackground = Color(0xFFEEEEEE),
+        keyActionBackground = Color(0xFFFAFAFA),
+        textColor = Color(0xFF111111),
+        secondaryTextColor = Color(0xFF757575),
+        accentColor = Color(0xFF111111),
+        onAccentColor = Color(0xFFFFFFFF),
+        suggestionBarBackground = Color(0xFFFFFFFF),
+        suggestionHighlightColor = Color(0xFF212121),
+        dividerColor = Color(0xFFE0E0E0),
+        keyBorderColor = Color(0xFFD4D4D4),
+        keyBorderWidth = 1.dp,
+        keyCornerRadius = 2.dp,
+        keyElevation = 0.dp,
+        pressedElevation = 0.dp,
+        specialIconStyle = ThemeSpecialIconStyle.REFERENCE_MINIMAL,
+        popupStyle = KeyPopupStyle.STANDARD,
+        spacebarStyle = SpacebarStyle.REFERENCE_MINIMAL_SPACE,
+        spacebarWatermark = "WAKSIE",
+        showTopRowHints = false,
+        topRowHintColor = Color(0xFF9E9E9E),
+        previewColors = listOf(
+            Color(0xFFFFFFFF),
+            Color(0xFFF5F5F5),
+            Color(0xFFD4D4D4),
+            Color(0xFF111111)
+        )
+    )
+
+    // Cat 3D Slate (3D dark slate keycaps, off-white top row, cute 3D cat backspace, cream Enter key)
+    val Cat3dSlate = KeyboardPalette(
+        themeId = "cat_3d_slate",
+        themeName = "Cat 3D Slate",
+        themeDescription = "3D sculpted dark slate keycaps with light top row, cute 3D cat backspace, and cream Enter button",
+        category = "Featured & 3D",
+        keyboardBackground = Color(0xFF232830), // Slate dark casing
+        keyBackground = Color(0xFF3E4652), // Dark slate keycap face
+        keyPressedBackground = Color(0xFF2E353E),
+        keyActionBackground = Color(0xFF3E4652),
+        textColor = Color(0xFFFFFFFF), // Crisp white letters
+        secondaryTextColor = Color(0xFF9EA7B3),
+        accentColor = Color(0xFFF4F5F7), // Off-white cream top row & enter
+        onAccentColor = Color(0xFF282E37), // Dark slate on cream
+        suggestionBarBackground = Color(0xFF21262E), // Sleek header bar
+        suggestionHighlightColor = Color(0xFFE2B040),
+        dividerColor = Color(0x22FFFFFF),
+        keyBorderColor = Color(0x00000000), // Custom drawn 3D canvas
+        keyBorderWidth = 0.dp,
+        keyCornerRadius = 10.dp,
+        keyElevation = 3.5.dp,
+        pressedElevation = 1.dp,
+        specialIconStyle = ThemeSpecialIconStyle.CAT_3D_SLATE,
+        popupStyle = KeyPopupStyle.CAT_3D_SLATE_POPUP,
+        spacebarStyle = SpacebarStyle.CAT_3D_SLATE_BAR,
+        spacebarWatermark = null,
+        showTopRowHints = true,
+        topRowHintColor = Color(0xFF8B95A2),
+        previewColors = listOf(
+            Color(0xFF232830),
+            Color(0xFFF4F5F7),
+            Color(0xFF3E4652),
+            Color(0xFFE2B040)
+        )
+    )
+
+    // Ridmik Dark Theme (1:1 Match to user screenshots: pure black background, slate keys, charcoal modifiers)
+    val RidmikDark = KeyboardPalette(
+        themeId = "ridmik_dark",
+        themeName = "Ridmik Dark",
+        themeDescription = "Authentic Ridmik Dark experience: pure black canvas, matte slate keycaps, iOS blue accents, and 4.5dp compact spacing",
+        category = "Ridmik & Bengali",
+        keyboardBackground = Color(0xFF000000),
+        keyBackground = Color(0xFF48484A),
+        keyPressedBackground = Color(0xFF6B6B70),
+        keyActionBackground = Color(0xFF262628),
+        textColor = Color(0xFFFFFFFF),
+        secondaryTextColor = Color(0xFF9A9A9E),
+        accentColor = Color(0xFF0A84FF),
+        onAccentColor = Color(0xFFFFFFFF),
+        suggestionBarBackground = Color(0xFF18181A),
+        suggestionHighlightColor = Color(0xFF0A84FF),
+        dividerColor = Color(0xFF28282C),
+        keyBorderColor = Color.Transparent,
+        keyBorderWidth = 0.dp,
+        keyCornerRadius = 4.5.dp,
+        keyElevation = 0.5.dp,
+        pressedElevation = 0.dp,
+        specialIconStyle = ThemeSpecialIconStyle.STANDARD,
+        popupStyle = KeyPopupStyle.STANDARD,
+        spacebarStyle = SpacebarStyle.STANDARD_BAR,
+        spacebarWatermark = "বাংলা",
+        showTopRowHints = true,
+        topRowHintColor = Color(0xFF9A9A9E),
+        previewColors = listOf(
+            Color(0xFF000000),
+            Color(0xFF48484A),
+            Color(0xFF262628),
+            Color(0xFF0A84FF)
+        )
+    )
+
+    // Ridmik Probhat (Screenshot 3 Probhat layout styling with classic teal accent)
+    val RidmikProbhat = KeyboardPalette(
+        themeId = "ridmik_probhat",
+        themeName = "Ridmik Probhat",
+        themeDescription = "Probhat Bengali layout theme: pure black canvas, teal accent, and ◄ প্রভাত ► spacebar navigation",
+        category = "Ridmik & Bengali",
+        keyboardBackground = Color(0xFF000000),
+        keyBackground = Color(0xFF48484A),
+        keyPressedBackground = Color(0xFF6B6B70),
+        keyActionBackground = Color(0xFF262628),
+        textColor = Color(0xFFFFFFFF),
+        secondaryTextColor = Color(0xFF9A9A9E),
+        accentColor = Color(0xFF00BFA5),
+        onAccentColor = Color(0xFFFFFFFF),
+        suggestionBarBackground = Color(0xFF18181A),
+        suggestionHighlightColor = Color(0xFF00BFA5),
+        dividerColor = Color(0xFF28282C),
+        keyBorderColor = Color.Transparent,
+        keyBorderWidth = 0.dp,
+        keyCornerRadius = 4.5.dp,
+        keyElevation = 0.5.dp,
+        pressedElevation = 0.dp,
+        specialIconStyle = ThemeSpecialIconStyle.STANDARD,
+        popupStyle = KeyPopupStyle.STANDARD,
+        spacebarStyle = SpacebarStyle.STANDARD_BAR,
+        spacebarWatermark = "প্রভাত",
+        showTopRowHints = true,
+        topRowHintColor = Color(0xFF9A9A9E),
+        previewColors = listOf(
+            Color(0xFF000000),
+            Color(0xFF48484A),
+            Color(0xFF262628),
+            Color(0xFF00BFA5)
+        )
+    )
+
+    // Ridmik Classic (Classic Lollipop/Marshmallow dark teal Ridmik style)
+    val RidmikClassic = KeyboardPalette(
+        themeId = "ridmik_classic",
+        themeName = "Ridmik Classic",
+        themeDescription = "Classic Ridmik Material design with slate-navy background, soft keycards, and teal accent",
+        category = "Ridmik & Bengali",
+        keyboardBackground = Color(0xFF1E222A),
+        keyBackground = Color(0xFF2E3542),
+        keyPressedBackground = Color(0xFF3F495A),
+        keyActionBackground = Color(0xFF242A35),
+        textColor = Color(0xFFFFFFFF),
+        secondaryTextColor = Color(0xFF9EA8B6),
+        accentColor = Color(0xFF00BFA5),
+        onAccentColor = Color(0xFFFFFFFF),
+        suggestionBarBackground = Color(0xFF262C36),
+        suggestionHighlightColor = Color(0xFF00BFA5),
+        dividerColor = Color(0xFF353D4D),
+        keyBorderColor = Color(0x22000000),
+        keyBorderWidth = 0.5.dp,
+        keyCornerRadius = 5.dp,
+        keyElevation = 1.dp,
+        pressedElevation = 0.5.dp,
+        specialIconStyle = ThemeSpecialIconStyle.STANDARD,
+        popupStyle = KeyPopupStyle.STANDARD,
+        spacebarStyle = SpacebarStyle.STANDARD_BAR,
+        spacebarWatermark = "বাংলা",
+        showTopRowHints = true,
+        topRowHintColor = Color(0xFF9EA8B6),
+        previewColors = listOf(
+            Color(0xFF1E222A),
+            Color(0xFF2E3542),
+            Color(0xFF242A35),
+            Color(0xFF00BFA5)
+        )
+    )
+
+    // Ridmik White (Clean light Ridmik theme with pure white keycaps)
+    val RidmikWhite = KeyboardPalette(
+        themeId = "ridmik_white",
+        themeName = "Ridmik White",
+        themeDescription = "Clean light Ridmik theme with pure white keycaps, subtle shadows, and crisp typography",
+        category = "Ridmik & Bengali",
+        keyboardBackground = Color(0xFFECEFF1),
+        keyBackground = Color(0xFFFFFFFF),
+        keyPressedBackground = Color(0xFFD6DBDF),
+        keyActionBackground = Color(0xFFCFD8DC),
+        textColor = Color(0xFF263238),
+        secondaryTextColor = Color(0xFF78909C),
+        accentColor = Color(0xFF0A84FF),
+        onAccentColor = Color(0xFFFFFFFF),
+        suggestionBarBackground = Color(0xFFF5F7FA),
+        suggestionHighlightColor = Color(0xFF0A84FF),
+        dividerColor = Color(0xFFCFD8DC),
+        keyBorderColor = Color(0x18000000),
+        keyBorderWidth = 0.5.dp,
+        keyCornerRadius = 4.5.dp,
+        keyElevation = 1.dp,
+        pressedElevation = 0.5.dp,
+        specialIconStyle = ThemeSpecialIconStyle.STANDARD,
+        popupStyle = KeyPopupStyle.STANDARD,
+        spacebarStyle = SpacebarStyle.STANDARD_BAR,
+        spacebarWatermark = "বাংলা",
+        showTopRowHints = true,
+        topRowHintColor = Color(0xFF78909C),
+        previewColors = listOf(
+            Color(0xFFECEFF1),
+            Color(0xFFFFFFFF),
+            Color(0xFFCFD8DC),
+            Color(0xFF0A84FF)
+        )
+    )
+
+    // NXV Enhanced Modern (Double theme counterpart)
+    val NxvEnhanced = KeyboardPalette(
+        themeId = "nxv_enhanced",
+        themeName = "NXV Enhanced",
+        themeDescription = "NXV modern aesthetic: glassmorphic borders, 8dp rounded keys, cyan accents, and modern layout",
+        category = "Modern & Dark",
+        keyboardBackground = Color(0xFF121316),
+        keyBackground = Color(0xFF20232A),
+        keyPressedBackground = Color(0xFF323742),
+        keyActionBackground = Color(0xFF181A1F),
+        textColor = Color(0xFFF0F4F8),
+        secondaryTextColor = Color(0xFF7C889B),
+        accentColor = Color(0xFF00D2FF),
+        onAccentColor = Color(0xFF003258),
+        suggestionBarBackground = Color(0xFF16181D),
+        suggestionHighlightColor = Color(0xFF00D2FF),
+        dividerColor = Color(0x33323742),
+        keyBorderColor = Color(0x2AFFFFFF),
+        keyBorderWidth = 0.5.dp,
+        keyCornerRadius = 8.dp,
+        keyElevation = 2.dp,
+        pressedElevation = 0.5.dp,
+        specialIconStyle = ThemeSpecialIconStyle.STANDARD,
+        popupStyle = KeyPopupStyle.STANDARD,
+        spacebarStyle = SpacebarStyle.STANDARD_BAR,
+        spacebarWatermark = "NXV",
+        showTopRowHints = true,
+        topRowHintColor = Color(0xFF7C889B),
+        previewColors = listOf(
+            Color(0xFF121316),
+            Color(0xFF20232A),
+            Color(0xFF181A1F),
+            Color(0xFF00D2FF)
+        )
+    )
+
+    val CustomDiy = KeyboardPalette(
+        themeId = "custom_diy",
+        themeName = "কাস্টম থিম (Custom DIY)",
+        themeDescription = "আপনার নিজের পছন্দের ব্যাকগ্রাউন্ড কালার, ফন্ট কালার, বাটন স্টাইল ও কাস্টম ফটো আর্টওয়ার্ক",
+        category = "Custom & Personal",
+        keyboardBackground = Color(0xFF121316),
+        keyBackground = Color(0xFF20232A),
+        keyPressedBackground = Color(0xFF323742),
+        keyActionBackground = Color(0xFF181A1F),
+        textColor = Color(0xFFF0F4F8),
+        secondaryTextColor = Color(0xFF7C889B),
+        accentColor = Color(0xFF00D2FF),
+        onAccentColor = Color(0xFF003258),
+        suggestionBarBackground = Color(0xFF16181D),
+        suggestionHighlightColor = Color(0xFF00D2FF),
+        dividerColor = Color(0x33323742),
+        keyBorderColor = Color(0x2AFFFFFF),
+        keyBorderWidth = 0.5.dp,
+        keyCornerRadius = 8.dp,
+        keyElevation = 1.5.dp,
+        previewColors = listOf(
+            Color(0xFF121316),
+            Color(0xFF20232A),
+            Color(0xFF00D2FF),
+            Color(0xFFF0F4F8)
+        )
+    )
+
     val ALL_THEMES: List<KeyboardPalette> = listOf(
+        RidmikDark,
+        RidmikProbhat,
+        RidmikClassic,
+        RidmikWhite,
+        NxvEnhanced,
+        Cat3dSlate,
+        RgbChroma,
+        ReferenceMinimal,
         RetroMech,
         KawaiiKitten,
         PuppyPop,
@@ -335,11 +669,64 @@ object KeyboardThemes {
         GeometricBalance,
         Light,
         Amoled,
-        Custom
+        Custom,
+        CustomDiy
     )
 
-    fun getPalette(themeName: String): KeyboardPalette {
-        return when (themeName.lowercase()) {
+    fun getPalette(themeName: String, settings: KeyboardSettings? = null): KeyboardPalette {
+        if (settings != null && (settings.customThemeEnabled || themeName.lowercase() in listOf("custom_diy", "custom_theme", "diy"))) {
+            val specialIcon = when (settings.customThemeIconStyle.lowercase()) {
+                "puppy", "puppy_pop" -> ThemeSpecialIconStyle.PUPPY_MINIMAL
+                "strawberry", "strawberry_dessert" -> ThemeSpecialIconStyle.STRAWBERRY_DESSERT
+                "kitten", "kawaii_kitten", "kitty" -> ThemeSpecialIconStyle.KAWAII_KITTEN
+                "retro_mech", "mech", "mechanical" -> ThemeSpecialIconStyle.RETRO_MECH
+                "minimal", "reference_minimal" -> ThemeSpecialIconStyle.REFERENCE_MINIMAL
+                "rgb", "rgb_neon", "neon" -> ThemeSpecialIconStyle.RGB_NEON
+                "cat", "cat_3d_slate", "cat_slate" -> ThemeSpecialIconStyle.CAT_3D_SLATE
+                else -> ThemeSpecialIconStyle.STANDARD
+            }
+            val accent = Color(settings.customAccentColor)
+            val isLightAccent = (accent.red * 0.299f + accent.green * 0.587f + accent.blue * 0.114f) > 0.6f
+            return KeyboardPalette(
+                themeId = "custom_diy",
+                themeName = "কাস্টম থিম (Custom DIY)",
+                themeDescription = "আপনার নিজস্ব ব্যাকগ্রাউন্ড কালার, বাটন কালার, ফন্ট কালার ও ফটো আর্ট",
+                category = "Custom & Personal",
+                keyboardBackground = Color(settings.customKeyboardBgColor),
+                keyBackground = Color(settings.customKeyBgColor),
+                keyPressedBackground = Color(settings.customKeyBgColor).copy(alpha = 0.85f),
+                keyActionBackground = Color(settings.customKeyActionBgColor),
+                textColor = Color(settings.customTextColor),
+                secondaryTextColor = Color(settings.customSecondaryTextColor),
+                accentColor = accent,
+                onAccentColor = if (isLightAccent) Color(0xFF000000) else Color(0xFFFFFFFF),
+                suggestionBarBackground = Color(settings.customSuggestionBgColor),
+                suggestionHighlightColor = accent,
+                dividerColor = Color(settings.customTextColor).copy(alpha = 0.15f),
+                keyBorderColor = Color(settings.customKeyBorderColor),
+                keyBorderWidth = settings.customKeyBorderWidthDp.dp,
+                keyCornerRadius = settings.keyCornerRadiusDp.dp,
+                keyElevation = settings.keyElevationDp.dp,
+                pressedElevation = (settings.keyElevationDp * 0.3f).dp,
+                specialIconStyle = specialIcon,
+                previewColors = listOf(
+                    Color(settings.customKeyboardBgColor),
+                    Color(settings.customKeyBgColor),
+                    accent,
+                    Color(settings.customTextColor)
+                )
+            )
+        }
+
+        val base = when (themeName.lowercase()) {
+            "ridmik_dark", "ridmik", "ridmikdark", "ridmik_black" -> RidmikDark
+            "ridmik_probhat", "probhat" -> RidmikProbhat
+            "ridmik_classic", "ridmikclassic", "classic_ridmik", "teal" -> RidmikClassic
+            "ridmik_white", "ridmikwhite", "ridmik_light" -> RidmikWhite
+            "nxv_enhanced", "nxv", "nxv_modern", "nxvenhanced" -> NxvEnhanced
+            "cat_3d_slate", "cat_3d", "cat3d", "3d_cat", "jiang_yunxi", "cat_slate" -> Cat3dSlate
+            "rgb_neon", "rgb", "chroma", "neon", "rgb_chroma", "rainbow" -> RgbChroma
+            "reference_minimal", "referenceminimal", "reference", "minimal" -> ReferenceMinimal
             "retro_mech", "retromech", "retro", "mechanical", "mech" -> RetroMech
             "kawaii_kitten", "kawaiikitten", "kitten", "kitty", "cute_kitty" -> KawaiiKitten
             "puppy_pop", "puppypop", "puppy", "puppy_white" -> PuppyPop
@@ -348,7 +735,14 @@ object KeyboardThemes {
             "light" -> Light
             "amoled" -> Amoled
             "custom", "indigo" -> Custom
-            else -> GeometricBalance
+            "custom_diy", "diy" -> CustomDiy
+            else -> RidmikDark
+        }
+
+        return if (settings != null && settings.keyCornerRadiusDp != 8) {
+            base.copy(keyCornerRadius = settings.keyCornerRadiusDp.dp)
+        } else {
+            base
         }
     }
 }

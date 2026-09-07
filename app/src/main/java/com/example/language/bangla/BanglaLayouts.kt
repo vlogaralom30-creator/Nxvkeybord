@@ -1,5 +1,7 @@
 package com.example.language.bangla
 
+import com.example.language.dictionary.BanglaDictionary
+
 object BanglaLayouts {
 
     // Normal mode keys for native Bangla typing
@@ -21,11 +23,7 @@ object BanglaLayouts {
     // Bangla Digits
     val BANGLA_DIGITS = listOf("০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯")
 
-    // Common Bangla high-frequency suggestion words
-    val COMMON_WORDS = listOf(
-        "বাংলাদেশ", "ধন্যবাদ", "ভালো", "কেমন", "আছো", "সবাই", "বন্ধু", "ভালোবাসি",
-        "সুন্দর", "কোথায়", "কখন", "কেন", "হবে", "হয়েছে", "অনেক", "একটু",
-        "খুব", "আজকে", "কাল", "পারব", "শুরু", "শেষ", "কাজ", "কথা",
-        "ঘর", "মানুষ", "সময়", "দিন", "রাত", "সকাল", "বিকেল", "প্রথম"
-    )
+    // Common Bangla high-frequency suggestion words (1,200+ words)
+    val COMMON_WORDS: List<String> = BanglaDictionary.WORDS
 }
+

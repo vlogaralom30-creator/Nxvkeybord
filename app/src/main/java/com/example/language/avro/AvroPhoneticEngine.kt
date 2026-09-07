@@ -1,5 +1,7 @@
 package com.example.language.avro
 
+import com.example.language.dictionary.BanglishDictionary
+
 /**
  * High-performance, comprehensive Avro-style Phonetic Engine inspired by Ridmik Keyboard.
  * Converts English phonetic typing (Banglish) to Unicode Bengali (বাংলা).
@@ -11,7 +13,8 @@ class AvroPhoneticEngine {
     companion object {
         // Bengali Unicode Constants
         const val HASANTA = "\u09CD" // ্
-        const val DARI = "\u09F7"    // ।
+        const val DARI = "\u0964"    // । (U+0964 Dari / Danda)
+        const val DOUBLE_DARI = "\u0965" // ॥ (U+0965 Double Dari)
         const val ANUSBAR = "\u0982" // ং
         const val BISARGA = "\u0983" // ঃ
         const val CHANDRABINDU = "\u0981" // ঁ
@@ -82,6 +85,10 @@ class AvroPhoneticEngine {
             "kkhm" to "ক্ষ্ম",
             "cchb" to "চ্ছ্ব",
             "shchh" to "শ্ছ",
+            "cchh" to "চ্ছ",
+            "sTr" to "স্ত্র",
+            "str" to "স্ত্র",
+            "ttb" to "ত্ত্ব",
             "Shk" to "ষ্ক",
             "Shkh" to "ষ্খ",
             "ShTh" to "ষ্ঠ",
@@ -93,10 +100,13 @@ class AvroPhoneticEngine {
 
             // Compound Juktakkhors (2-3 chars)
             "kkh" to "ক্ষ",
+            "kSh" to "ক্ষ",
             "ksh" to "ক্ষ",
             "gny" to "জ্ঞ",
             "jny" to "জ্ঞ",
+            "jn" to "জ্ঞ",
             "cch" to "চ্ছ",
+            "chh" to "ছ",
             "jjh" to "জ্ঝ",
             "ngk" to "ঙ্ক",
             "ngkh" to "ঙ্খ",
@@ -109,6 +119,7 @@ class AvroPhoneticEngine {
             "shb" to "শ্ব",
             "shm" to "শ্ম",
             "shl" to "শ্ল",
+            "shsh" to "শ্শ",
             "ShT" to "ষ্ট",
             "Shp" to "ষ্প",
             "sk" to "স্ক",
@@ -121,6 +132,7 @@ class AvroPhoneticEngine {
             "sn" to "স্ন",
             "sl" to "স্ল",
             "sb" to "স্ব",
+            "ss" to "স্স",
             "nt" to "ন্ত",
             "nth" to "ন্থ",
             "nd" to "ন্দ",
@@ -137,6 +149,7 @@ class AvroPhoneticEngine {
             "ps" to "প্স",
             "pn" to "প্ন",
             "pl" to "প্ল",
+            "pp" to "প্প",
             "bd" to "ব্দ",
             "bdh" to "ব্ধ",
             "bb" to "ব্ব",
@@ -145,11 +158,15 @@ class AvroPhoneticEngine {
             "kn" to "ক্ন",
             "km" to "ক্ম",
             "kl" to "ক্ল",
+            "kk" to "ক্ক",
             "gd" to "গ্দ",
             "gdh" to "গ্ধ",
             "gn" to "গ্ন",
             "gm" to "গ্ম",
             "gl" to "গ্ল",
+            "gg" to "গ্গ",
+            "cc" to "চ্চ",
+            "jj" to "জ্জ",
             "tt" to "ত্ত",
             "tth" to "ত্থ",
             "tn" to "ত্ন",
@@ -259,6 +276,11 @@ class AvroPhoneticEngine {
             "je" to listOf("যে"),
             "ke" to listOf("কে"),
             "ki" to listOf("কি", "কী"),
+            "kire" to listOf("কিরে"),
+            "kisu" to listOf("কিছু"),
+            "koy" to listOf("কই"),
+            "koi" to listOf("কই"),
+            "koro" to listOf("করো", "কর"),
             "kintu" to listOf("কিন্তু"),
             "keno" to listOf("কেন"),
             "kothay" to listOf("কোথায়", "কোথায়"),
@@ -645,9 +667,36 @@ class AvroPhoneticEngine {
         val candidates = LinkedHashSet<String>()
         val lower = cleanInput.lowercase()
 
-        // 1. Exact match in Common Dictionary
+        // User explicit high-priority patterns:
+        // k -> ki, koro, koy (কি, করো, কই)
+        // ko -> koro, kothay, koy (করো, কোথায়, কই)
+        // ki -> kire, kisu (কিরে, কিছু, কি)
+        if (lower == "k") {
+            candidates.add("কি")
+            candidates.add("করো")
+            candidates.add("কই")
+            candidates.add("কোথায়")
+            candidates.add("কিছু")
+        } else if (lower == "ko") {
+            candidates.add("করো")
+            candidates.add("কোথায়")
+            candidates.add("কই")
+            candidates.add("কোনো")
+            candidates.add("কখন")
+        } else if (lower == "ki") {
+            candidates.add("কি")
+            candidates.add("কিরে")
+            candidates.add("কিছু")
+            candidates.add("কিন্তু")
+            candidates.add("কী")
+        }
+
+        // 1. Exact match in Common Dictionary and Banglish Dictionary (1000+ words)
         COMMON_DICTIONARY[lower]?.let {
             candidates.addAll(it)
+        }
+        BanglishDictionary.BANGLISH_MAP[lower]?.let {
+            candidates.add(it)
         }
 
         // 2. Rule-based phonetic conversion
@@ -656,13 +705,14 @@ class AvroPhoneticEngine {
             candidates.add(parsed)
         }
 
-        // 3. Prefix lookups in Common Dictionary for fast predictive typing
-        if (cleanInput.length >= 2) {
-            val prefixMatches = COMMON_DICTIONARY.filterKeys { it.startsWith(lower) && it != lower }
-                .flatMap { it.value }
-                .take(3)
-            candidates.addAll(prefixMatches)
-        }
+        // 3. Prefix lookups in BanglishDictionary & Common Dictionary for fast predictive typing
+        val banglishMatches = BanglishDictionary.getBengaliFromBanglish(lower, maxCandidates)
+        candidates.addAll(banglishMatches)
+
+        val prefixMatches = COMMON_DICTIONARY.filterKeys { it.startsWith(lower) && it != lower }
+            .flatMap { it.value }
+            .take(maxCandidates)
+        candidates.addAll(prefixMatches)
 
         // 4. Alternative phonetic heuristics (v -> bh, w -> o, s -> sh, z -> j)
         if (lower.contains("v") || lower.contains("w")) {
@@ -686,7 +736,7 @@ class AvroPhoneticEngine {
             COMMON_DICTIONARY[altJ.lowercase()]?.let { candidates.addAll(it) }
         }
 
-        return candidates.take(maxCandidates)
+        return candidates.take(maxCandidates).toList()
     }
 
     /**
@@ -697,7 +747,25 @@ class AvroPhoneticEngine {
         if (clean.isEmpty()) return emptyList()
 
         val results = LinkedHashSet<String>()
+        if (clean == "k") {
+            results.add("কি")
+            results.add("করো")
+            results.add("কই")
+        } else if (clean == "ko") {
+            results.add("করো")
+            results.add("কোথায়")
+            results.add("কই")
+        } else if (clean == "ki") {
+            results.add("কিরে")
+            results.add("কিছু")
+            results.add("কি")
+        }
+
         COMMON_DICTIONARY[clean]?.let { results.addAll(it) }
+        BanglishDictionary.BANGLISH_MAP[clean]?.let { results.add(it) }
+
+        val banglishMatches = BanglishDictionary.getBengaliFromBanglish(clean, maxCount)
+        results.addAll(banglishMatches)
 
         val prefixMatches = COMMON_DICTIONARY.filterKeys { it.startsWith(clean) }
             .flatMap { it.value }
@@ -714,7 +782,7 @@ class AvroPhoneticEngine {
         val clean = input.trim()
         if (clean.isEmpty()) return ""
         val lower = clean.lowercase()
-        val direct = COMMON_DICTIONARY[lower]?.firstOrNull()
+        val direct = COMMON_DICTIONARY[lower]?.firstOrNull() ?: BanglishDictionary.BANGLISH_MAP[lower]
         if (direct != null) return direct
 
         return parsePhonetic(clean)
@@ -744,6 +812,12 @@ class AvroPhoneticEngine {
 
             // Check for special symbols: . | , : ^ ` $
             if (c == '.' || c == '|') {
+                if (c == '.' && i + 1 < len && input[i + 1] == '.') {
+                    result.append(DOUBLE_DARI)
+                    prevCharWasConsonant = false
+                    i += 2
+                    continue
+                }
                 result.append(DARI)
                 prevCharWasConsonant = false
                 i++

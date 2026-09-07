@@ -22,6 +22,12 @@ private val STRAWBERRY_ROW1_HINTS = listOf("+", "×", "+", "=", "/", "-", "<", "
 private val STRAWBERRY_ROW2_HINTS = listOf("!", "@", "#", "%", "^", "&", "*", "(", ")")
 private val STRAWBERRY_ROW3_HINTS = listOf("-", "'", "\"", ":", ";", ",", "?")
 
+// Authentic Ridmik secondary symbol mappings for long-press typing
+private val RIDMIK_ROW0_HINTS = listOf("♪", "€", "£", "¥", "₱", "¢", "₩", "₹", "฿", "°")
+private val RIDMIK_ROW1_SYMBOLS = listOf("৳", "%", "_", ";", "<", ">", "+", "=", "[", "]")
+private val RIDMIK_ROW2_HINTS = listOf("@", "#", "&", "*", "-", "!", "?", "(", ")")
+private val RIDMIK_ROW3_HINTS = listOf("\"", "'", ":", ";", ",", ".", "/")
+
 @Composable
 fun QwertyKeyLayout(
     isAvro: Boolean,
@@ -63,15 +69,20 @@ fun QwertyKeyLayout(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                EnglishEngine.NUMBER_ROW.forEach { num ->
+                EnglishEngine.NUMBER_ROW.forEachIndexed { index, num ->
+                    val alt = RIDMIK_ROW0_HINTS.getOrNull(index)
                     KeyboardKeyView(
                         label = num,
+                        subLabel = alt,
                         modifier = Modifier.weight(1f),
                         height = keyHeight * 0.85f,
                         palette = palette,
                         showSubLabel = showKeySubLabels,
                         popupMode = popupMode,
-                        onTap = { onCharTyped(num) }
+                        columnIndex = index,
+                        totalColumns = 10,
+                        onTap = { onCharTyped(num) },
+                        onLongPress = { alt?.let { onCharTyped(it) } }
                     )
                 }
             }
@@ -89,7 +100,7 @@ fun QwertyKeyLayout(
                 } else if (!showNumberRow) {
                     EnglishEngine.NUMBER_ROW.getOrNull(index)
                 } else {
-                    null
+                    RIDMIK_ROW1_SYMBOLS.getOrNull(index)
                 }
 
                 KeyboardKeyView(
@@ -97,6 +108,8 @@ fun QwertyKeyLayout(
                     subLabel = alt,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    columnIndex = index,
+                    totalColumns = 10,
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
@@ -117,13 +130,15 @@ fun QwertyKeyLayout(
             Spacer(modifier = Modifier.weight(0.5f))
             EnglishEngine.QWERTY_ROW_2.forEachIndexed { index, letter ->
                 val char = if (isShifted) letter.uppercase() else letter.lowercase()
-                val alt = if (isStrawberry) STRAWBERRY_ROW2_HINTS.getOrNull(index) else null
+                val alt = if (isStrawberry) STRAWBERRY_ROW2_HINTS.getOrNull(index) else RIDMIK_ROW2_HINTS.getOrNull(index)
 
                 KeyboardKeyView(
                     label = char,
                     subLabel = alt,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    columnIndex = index,
+                    totalColumns = 9,
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
@@ -159,6 +174,8 @@ fun QwertyKeyLayout(
                 palette = palette,
                 showSubLabel = showKeySubLabels,
                 popupMode = popupMode,
+                columnIndex = 0,
+                totalColumns = 10,
                 onTap = { onShift() }
             )
 
@@ -167,7 +184,7 @@ fun QwertyKeyLayout(
                 val alt = when {
                     isStrawberry -> STRAWBERRY_ROW3_HINTS.getOrNull(index)
                     isPuppy && index == 0 -> "*"
-                    else -> null
+                    else -> RIDMIK_ROW3_HINTS.getOrNull(index)
                 }
 
                 KeyboardKeyView(
@@ -175,6 +192,8 @@ fun QwertyKeyLayout(
                     subLabel = alt,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    columnIndex = index + 1,
+                    totalColumns = 10,
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
@@ -196,6 +215,8 @@ fun QwertyKeyLayout(
                 palette = palette,
                 showSubLabel = showKeySubLabels,
                 popupMode = popupMode,
+                columnIndex = 9,
+                totalColumns = 10,
                 onTap = { onDelete() }
             )
         }
@@ -216,6 +237,8 @@ fun QwertyKeyLayout(
                 palette = palette,
                 showSubLabel = showKeySubLabels,
                 popupMode = popupMode,
+                columnIndex = 0,
+                totalColumns = 10,
                 onTap = { onSwitchMode(KeyboardMode.NUMBERS) }
             )
 
@@ -229,11 +252,13 @@ fun QwertyKeyLayout(
                     palette = palette,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    columnIndex = 2,
+                    totalColumns = 10,
                     onTap = { onSwitchMode(KeyboardMode.EMOJI) }
                 )
             }
 
-            // Language Switch 🌐 (Customizable)
+            // Language Switch 🌐 or Comma Key (Matching authentic Ridmik layout)
             if (showLanguageKey) {
                 KeyboardKeyView(
                     label = "🌐",
@@ -244,18 +269,40 @@ fun QwertyKeyLayout(
                     palette = palette,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    columnIndex = 3,
+                    totalColumns = 10,
                     onTap = { onLanguageCycle() },
                     onLongPress = { onLongPressLanguage() }
                 )
+            } else {
+                KeyboardKeyView(
+                    label = ",",
+                    subLabel = "...",
+                    modifier = Modifier.weight(1.0f),
+                    isSpecialAction = false,
+                    height = keyHeight,
+                    palette = palette,
+                    showSubLabel = showKeySubLabels,
+                    popupMode = popupMode,
+                    columnIndex = 3,
+                    totalColumns = 10,
+                    onTap = { onCharTyped(",") },
+                    onLongPress = { onCharTyped("!") }
+                )
             }
 
-            // Space Bar with language badge and geometric indicator
+            // Space Bar with Ridmik arrow indicators: ◄ English ► / ◄ বাংলা ►
+            val isRidmikTheme = palette.category.contains("Ridmik") || palette.themeId.startsWith("ridmik")
             val spaceWeight = when {
-                !showEmojiKey && !showLanguageKey -> 5.4f
-                !showEmojiKey || !showLanguageKey -> 4.4f
-                else -> 3.6f
+                !showEmojiKey -> 4.8f
+                else -> 3.8f
             }
-            val spaceLabel = if (isAvro) "AVRO" else "SPACE"
+            val spaceLabel = when {
+                isRidmikTheme && isAvro -> "◄  বাংলা  ►"
+                isRidmikTheme -> "◄  English  ►"
+                isAvro -> "বাংলা"
+                else -> "English"
+            }
             KeyboardKeyView(
                 label = spaceLabel,
                 modifier = Modifier.weight(spaceWeight),
@@ -264,14 +311,16 @@ fun QwertyKeyLayout(
                 palette = palette,
                 showSubLabel = showKeySubLabels,
                 popupMode = popupMode,
+                columnIndex = 7,
+                totalColumns = 10,
                 onHorizontalDrag = onSpaceDrag,
                 onTap = { onSpace() },
                 onLongPress = { onLongPressLanguage() }
             )
 
-            // Punctuation (comma/period/dari)
+            // Punctuation (comma/period/dari) with bottom corner dot hints
             val punctChar = if (isAvro) "।" else if (isPuppy) "," else "."
-            val punctAlt = if (isPuppy) ";" else if (isStrawberry) "..." else null
+            val punctAlt = if (isAvro) "..." else if (isPuppy) ";" else "..."
             KeyboardKeyView(
                 label = punctChar,
                 subLabel = punctAlt,
@@ -281,8 +330,13 @@ fun QwertyKeyLayout(
                 palette = palette,
                 showSubLabel = showKeySubLabels,
                 popupMode = popupMode,
+                columnIndex = 8,
+                totalColumns = 10,
                 onTap = { onCharTyped(punctChar) },
-                onLongPress = { punctAlt?.let { onCharTyped(it) } }
+                onLongPress = {
+                    val longPressChar = if (isAvro) "॥" else "?"
+                    onCharTyped(longPressChar)
+                }
             )
 
             // Enter Key (Theme focal accent)
@@ -295,6 +349,8 @@ fun QwertyKeyLayout(
                 palette = palette,
                 showSubLabel = showKeySubLabels,
                 popupMode = popupMode,
+                columnIndex = 9,
+                totalColumns = 10,
                 onTap = { onEnter() }
             )
         }

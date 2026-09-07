@@ -95,21 +95,49 @@ class SuggestionEngine(
 
         when (mode.lowercase()) {
             "avro" -> {
-                // 1. Avro phonetic conversion & dictionary candidate matches
-                val candidates = avroEngine.getCandidates(trimmed, maxCandidates = 4)
-                candidates.forEachIndexed { index, candidate ->
+                // 1. Primary candidate from Avro phonetic engine
+                val candidates = avroEngine.getCandidates(trimmed, maxCandidates = 5)
+                val primaryCandidate = candidates.firstOrNull()
+                if (primaryCandidate != null && results.none { it.replacementText == primaryCandidate }) {
+                    results.add(
+                        SuggestionItem(
+                            displayText = primaryCandidate,
+                            replacementText = primaryCandidate,
+                            isPrimary = !results.any { it.isShortcut || it.isAutocorrect }
+                        )
+                    )
+                }
+
+                // 2. User learned words from local Room database (high priority as user values learned words)
+                val learned = repository.getWordSuggestions(trimmed, "bn")
+                learned.take(2).forEach { word ->
+                    if (results.none { it.replacementText == word }) {
+                        results.add(SuggestionItem(displayText = word, replacementText = word))
+                    }
+                }
+
+                // 3. Remaining Avro candidate matches
+                candidates.drop(1).forEach { candidate ->
                     if (results.none { it.replacementText == candidate }) {
                         results.add(
                             SuggestionItem(
                                 displayText = candidate,
                                 replacementText = candidate,
-                                isPrimary = index == 0 && !results.any { it.isShortcut || it.isAutocorrect }
+                                isPrimary = false
                             )
                         )
                     }
                 }
 
-                // 2. Mixed-language candidate support (e.g. "Facebook", "meeting", "post", "phone")
+                // 4. Frequent word prefix suggestions from Avro engine
+                val frequent = avroEngine.getFrequentWordSuggestions(trimmed, maxCount = 3)
+                frequent.forEach { word ->
+                    if (results.none { it.replacementText == word }) {
+                        results.add(SuggestionItem(displayText = word, replacementText = word))
+                    }
+                }
+
+                // 5. Mixed-language candidate support (e.g. "Facebook", "meeting", "post", "phone")
                 val mixedCandidates = nextWordPredictor.getMixedEnglishCandidates(trimmed, maxCount = 2)
                 for (mixed in mixedCandidates) {
                     if (results.none { it.replacementText.equals(mixed, ignoreCase = true) }) {
@@ -122,78 +150,76 @@ class SuggestionEngine(
                         )
                     }
                 }
-
-                // 3. Frequent word prefix suggestions from Avro engine
-                val frequent = avroEngine.getFrequentWordSuggestions(trimmed, maxCount = 3)
-                frequent.forEach { word ->
-                    if (results.none { it.replacementText == word }) {
-                        results.add(SuggestionItem(displayText = word, replacementText = word))
-                    }
-                }
-
-                // 4. User learned words from local Room database
-                val learned = repository.getWordSuggestions(trimmed, "bn")
-                learned.take(3).forEach { word ->
-                    if (results.none { it.replacementText == word }) {
-                        results.add(SuggestionItem(displayText = word, replacementText = word))
-                    }
-                }
             }
 
             "bangla" -> {
-                // Bangla prefix matching
+                // 1. User learned words from Room database
+                val learned = repository.getWordSuggestions(trimmed, "bn")
+                learned.take(2).forEach { word ->
+                    if (results.none { it.replacementText == word }) {
+                        results.add(
+                            SuggestionItem(
+                                displayText = word,
+                                replacementText = word,
+                                isPrimary = results.none { it.isShortcut || it.isAutocorrect }
+                            )
+                        )
+                    }
+                }
+
+                // 2. 1,200+ Bangla Dictionary prefix matching
                 val matching = BanglaLayouts.COMMON_WORDS
-                    .filter { it.startsWith(trimmed) }
-                    .take(4)
+                    .filter { it.startsWith(trimmed) && it != trimmed }
+                    .take(5)
                 matching.forEachIndexed { index, word ->
                     if (results.none { it.replacementText == word }) {
                         results.add(
                             SuggestionItem(
                                 displayText = word,
                                 replacementText = word,
-                                isPrimary = index == 0 && !results.any { it.isShortcut || it.isAutocorrect }
+                                isPrimary = index == 0 && results.none { it.isShortcut || it.isAutocorrect || it.isPrimary }
                             )
                         )
-                    }
-                }
-                val learned = repository.getWordSuggestions(trimmed, "bn")
-                learned.take(3).forEach { word ->
-                    if (results.none { it.replacementText == word }) {
-                        results.add(SuggestionItem(displayText = word, replacementText = word))
                     }
                 }
             }
 
             else -> {
-                // English mode
-                val englishWords = englishEngine.getSuggestions(trimmed, maxCount = 4)
-                englishWords.forEachIndexed { index, word ->
+                // 1. User learned words from Room database
+                val learned = repository.getWordSuggestions(trimmed, "en")
+                learned.take(2).forEach { word ->
                     if (results.none { it.replacementText == word }) {
                         results.add(
                             SuggestionItem(
                                 displayText = word,
                                 replacementText = word,
-                                isPrimary = index == 0 && !results.any { it.isShortcut || it.isAutocorrect }
+                                isPrimary = results.none { it.isShortcut || it.isAutocorrect }
                             )
                         )
                     }
                 }
 
-                // Query Android system User Dictionary if available
+                // 2. English & Banglish Dictionary matches (1,200+ English + 1,000+ Banglish words)
+                val englishWords = englishEngine.getSuggestions(trimmed, maxCount = 5)
+                englishWords.forEachIndexed { index, word ->
+                    if (results.none { it.replacementText.equals(word, ignoreCase = true) }) {
+                        results.add(
+                            SuggestionItem(
+                                displayText = word,
+                                replacementText = word,
+                                isPrimary = index == 0 && results.none { it.isShortcut || it.isAutocorrect || it.isPrimary }
+                            )
+                        )
+                    }
+                }
+
+                // 3. Query Android system User Dictionary if available
                 androidUserDictionary?.let { aud ->
                     val userWords = aud.queryWords(trimmed, maxCount = 2)
                     for (uw in userWords) {
                         if (results.none { it.replacementText.equals(uw, ignoreCase = true) }) {
                             results.add(SuggestionItem(displayText = uw, replacementText = uw))
                         }
-                    }
-                }
-
-                // Local Room learned words
-                val learned = repository.getWordSuggestions(trimmed, "en")
-                learned.take(3).forEach { word ->
-                    if (results.none { it.replacementText == word }) {
-                        results.add(SuggestionItem(displayText = word, replacementText = word))
                     }
                 }
             }

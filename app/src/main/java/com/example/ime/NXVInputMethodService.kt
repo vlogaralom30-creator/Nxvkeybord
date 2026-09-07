@@ -41,6 +41,10 @@ import com.example.keyboard.ShiftState
 import com.example.language.avro.AvroPhoneticEngine
 import com.example.suggestion.SuggestionEngine
 import com.example.suggestion.SuggestionItem
+import com.example.downloader.tiktok.TikTokDownloadManager
+import com.example.security.StrongPasswordGenerator
+import com.example.sticker.StickerItem
+import com.example.sticker.StickerManager
 import com.example.ui.keyboard.AutoSavePromptData
 import com.example.ui.keyboard.KeyboardRootView
 import kotlinx.coroutines.CoroutineScope
@@ -71,6 +75,8 @@ class NXVInputMethodService : InputMethodService(),
     private val avroEngine = AvroPhoneticEngine()
     private lateinit var suggestionEngine: SuggestionEngine
     private lateinit var feedbackManager: FeedbackManager
+    private lateinit var stickerManager: StickerManager
+    private var currentEditorInfo: EditorInfo? = null
 
     // Observable states
     private var currentMode by mutableStateOf(KeyboardMode.ENGLISH)
@@ -117,6 +123,7 @@ class NXVInputMethodService : InputMethodService(),
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
 
         feedbackManager = FeedbackManager(this)
+        stickerManager = StickerManager.getInstance(this)
         val app = application as? NXVApplication ?: NXVApplication.instance
         suggestionEngine = SuggestionEngine(app.repository, this)
 
@@ -180,6 +187,11 @@ class NXVInputMethodService : InputMethodService(),
             lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         }
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        // Increment keyboard open count
+        serviceScope.launch {
+            val app = application as? NXVApplication ?: NXVApplication.instance
+            app.preferences.incrementKeyboardOpenCount()
+        }
     }
 
     override fun onWindowHidden() {
@@ -284,6 +296,9 @@ class NXVInputMethodService : InputMethodService(),
                         }
                     },
                     onSyncClipboard = { syncSystemClipboard() },
+                    onStickerSelected = { sticker ->
+                        stickerManager.sendSticker(sticker, currentInputConnection, currentEditorInfo)
+                    },
                     onSaveCredential = { service, user, pass ->
                         serviceScope.launch {
                             val app = application as? NXVApplication ?: NXVApplication.instance
@@ -316,6 +331,11 @@ class NXVInputMethodService : InputMethodService(),
                     onSelectAll = { inputConnectionManager.selectAll() },
                     onCopyText = { inputConnectionManager.copyText() },
                     onPasteText = { inputConnectionManager.pasteText() },
+                    onCutText = { inputConnectionManager.cutText() },
+                    onUndoText = { inputConnectionManager.undo() },
+                    onRedoText = { inputConnectionManager.redo() },
+                    onMoveCursorWordLeft = { isSelecting -> inputConnectionManager.moveCursorWordLeft(isSelecting) },
+                    onMoveCursorWordRight = { isSelecting -> inputConnectionManager.moveCursorWordRight(isSelecting) },
                     onOpenSettings = {
                         val intent = Intent(this@NXVInputMethodService, MainActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -388,6 +408,17 @@ class NXVInputMethodService : InputMethodService(),
                             val app = application as? NXVApplication ?: NXVApplication.instance
                             app.preferences.updateOneHandedKeyStyle(style)
                         }
+                    },
+                    onVoiceLiveInput = { text, isFinal ->
+                        if (text.isEmpty() && isFinal) {
+                            inputConnectionManager.finishComposing()
+                        } else if (isFinal) {
+                            inputConnectionManager.finishComposing(text)
+                            inputConnectionManager.commitText(" ")
+                            refreshSuggestions()
+                        } else {
+                            inputConnectionManager.setComposing(text, text)
+                        }
                     }
                 )
                 }
@@ -425,6 +456,7 @@ class NXVInputMethodService : InputMethodService(),
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
+        currentEditorInfo = info
         attachLifecycleOwners(inputComposeView)
         if (!lifecycleRegistry.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
             lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
@@ -484,6 +516,15 @@ class NXVInputMethodService : InputMethodService(),
 
     override fun onFinishInputView(finishingInput: Boolean) {
         super.onFinishInputView(finishingInput)
+        if (!isCurrentFieldPassword) {
+            val fullText = inputConnectionManager.getTextBeforeCursor(500).trim()
+            if (fullText.length >= 8) {
+                serviceScope.launch {
+                    val app = application as? NXVApplication ?: NXVApplication.instance
+                    app.repository.recordLongText(fullText, currentAppName)
+                }
+            }
+        }
         commitAvroBuffer()
         checkAndOfferPasswordSave()
         inputConnectionManager.clearComposing()
@@ -541,13 +582,25 @@ class NXVInputMethodService : InputMethodService(),
             if (word.contains("@") || word.length >= 3) {
                 lastObservedUsername = word
             }
+            // Track letter typing analytics
+            serviceScope.launch {
+                val app = application as? NXVApplication ?: NXVApplication.instance
+                app.repository.recordLetterTyped(effectiveChar)
+            }
         }
 
         if (currentMode == KeyboardMode.AVRO) {
-            avroRawBuffer.append(effectiveChar)
-            val converted = avroEngine.convertWord(avroRawBuffer.toString())
-            inputConnectionManager.setComposing(converted, avroRawBuffer.toString())
-            refreshSuggestions()
+            val isPunctuationOrSymbol = effectiveChar in listOf("।", "॥", ",", ";", ":", "!", "?", "\"", "'", "\n", "\t")
+            if (isPunctuationOrSymbol) {
+                commitAvroBuffer()
+                inputConnectionManager.commitText(effectiveChar)
+                refreshSuggestions()
+            } else {
+                avroRawBuffer.append(effectiveChar)
+                val converted = avroEngine.convertWord(avroRawBuffer.toString())
+                inputConnectionManager.setComposing(converted, avroRawBuffer.toString())
+                refreshSuggestions()
+            }
         } else {
             inputConnectionManager.commitText(effectiveChar)
             refreshSuggestions()
@@ -606,6 +659,15 @@ class NXVInputMethodService : InputMethodService(),
     }
 
     private fun handleEnter() {
+        if (!isCurrentFieldPassword) {
+            val sentence = inputConnectionManager.getTextBeforeCursor(400).trim()
+            if (sentence.length >= 8) {
+                serviceScope.launch {
+                    val app = application as? NXVApplication ?: NXVApplication.instance
+                    app.repository.recordLongText(sentence, currentAppName)
+                }
+            }
+        }
         if (currentMode == KeyboardMode.AVRO && avroRawBuffer.isNotEmpty()) {
             val raw = avroRawBuffer.toString()
             val converted = avroEngine.convertWord(raw)
@@ -620,17 +682,47 @@ class NXVInputMethodService : InputMethodService(),
         refreshSuggestions()
     }
 
+    private fun detectCategory(service: String, pkg: String): String {
+        val text = "$service $pkg".lowercase()
+        return when {
+            text.contains("facebook") || text.contains("twitter") || text.contains("instagram") ||
+                    text.contains("tiktok") || text.contains("linkedin") || text.contains("discord") -> "Social"
+            text.contains("bank") || text.contains("pay") || text.contains("bkash") ||
+                    text.contains("nagad") || text.contains("paypal") || text.contains("finance") -> "Banking & Finance"
+            text.contains("gmail") || text.contains("mail") || text.contains("outlook") ||
+                    text.contains("yahoo") || text.contains("google") -> "Email & Work"
+            text.contains("shop") || text.contains("amazon") || text.contains("daraz") ||
+                    text.contains("ebay") || text.contains("cart") -> "Shopping"
+            else -> "General"
+        }
+    }
+
+    private fun detectSiteUrl(pkg: String, service: String): String {
+        val isBrowser = pkg.contains("chrome") || pkg.contains("firefox") || pkg.contains("browser") ||
+                pkg.contains("opera") || pkg.contains("brave") || pkg.contains("edge") || pkg.contains("duckduckgo")
+        if (isBrowser) {
+            val cleanName = service.lowercase().replace(" ", "").removeSuffix("browser").removeSuffix("chrome")
+            return if (cleanName.isNotBlank()) "https://$cleanName.com" else "https://web.app"
+        }
+        return ""
+    }
+
     private fun checkAndOfferPasswordSave() {
         if (isCurrentFieldPassword && currentPasswordBuffer.length >= 3) {
             val passToSave = currentPasswordBuffer.toString()
             val serviceName = currentAppName.ifBlank { "Account" }
             val username = lastObservedUsername
             val pkg = currentPackageName
+            val siteUrl = detectSiteUrl(pkg, serviceName)
+            val category = detectCategory(serviceName, pkg)
 
             autoSavePromptState = AutoSavePromptData(
                 serviceName = serviceName,
                 username = username,
                 password = passToSave,
+                siteUrl = siteUrl,
+                appName = currentAppName,
+                category = category,
                 onConfirmSave = {
                     serviceScope.launch {
                         val app = application as? NXVApplication ?: NXVApplication.instance
@@ -638,7 +730,10 @@ class NXVInputMethodService : InputMethodService(),
                             serviceName = serviceName,
                             username = username,
                             password = passToSave,
-                            packageName = pkg
+                            packageName = pkg,
+                            siteUrl = siteUrl,
+                            appName = currentAppName,
+                            category = category
                         )
                     }
                     autoSavePromptState = null
@@ -702,6 +797,7 @@ class NXVInputMethodService : InputMethodService(),
     }
 
     private fun handlePaste(text: String, returnToKeyboard: Boolean = true) {
+        TikTokDownloadManager.getInstance(this).onClipboardUpdated(text)
         inputConnectionManager.commitText(text)
         if (returnToKeyboard) {
             currentMode = when (currentSettingsState.value.currentLanguage) {
@@ -750,12 +846,15 @@ class NXVInputMethodService : InputMethodService(),
 
             if (isPass) {
                 // In password fields, standard text prediction is disabled for security,
-                // but we check Encrypted Storage for matching saved credentials to offer 1-tap autofill!
+                // but we check Encrypted Storage for matching saved credentials to offer 1-tap autofill
+                // and offer a strong password generator chip!
                 val app = application as? NXVApplication ?: NXVApplication.instance
                 val matchingCreds = app.repository.getCredentialsForPackageOrQuery(
                     packageName = currentPackageName,
                     query = currentAppName
                 )
+
+                val chips = mutableListOf<SuggestionItem>()
 
                 if (matchingCreds.isNotEmpty()) {
                     val autofillChips = matchingCreds.take(2).map { cred ->
@@ -770,10 +869,20 @@ class NXVInputMethodService : InputMethodService(),
                             isPrimary = true
                         )
                     }
-                    suggestionsState.value = autofillChips
-                } else {
-                    suggestionsState.value = emptyList()
+                    chips.addAll(autofillChips)
                 }
+
+                // Add Strong Password Suggestion chip
+                val strongPass = StrongPasswordGenerator.generatePassword(16)
+                chips.add(
+                    SuggestionItem(
+                        displayText = "⚡ Strong Pass: $strongPass",
+                        replacementText = strongPass,
+                        isPrimary = matchingCreds.isEmpty()
+                    )
+                )
+
+                suggestionsState.value = chips
                 return@launch
             }
 
@@ -810,6 +919,7 @@ class NXVInputMethodService : InputMethodService(),
         serviceScope.launch {
             val app = application as? NXVApplication ?: NXVApplication.instance
             app.repository.learnWord(word, locale)
+            app.repository.recordWordTyped(word, locale)
         }
     }
 
@@ -822,6 +932,7 @@ class NXVInputMethodService : InputMethodService(),
                 val item = clipData.getItemAt(i)
                 val text = item?.text?.toString() ?: item?.coerceToText(this)?.toString()
                 if (!text.isNullOrBlank()) {
+                    TikTokDownloadManager.getInstance(this).onClipboardUpdated(text)
                     serviceScope.launch {
                         val app = application as? NXVApplication ?: NXVApplication.instance
                         app.repository.addClipboardItem(text)

@@ -291,10 +291,22 @@ class InputConnectionManager {
         sendDirectionKey(ic, KeyEvent.KEYCODE_MOVE_END, select)
     }
 
-    private fun sendDirectionKey(ic: InputConnection, keyCode: Int, select: Boolean) {
+    fun moveCursorWordLeft(select: Boolean = false) {
+        val ic = inputConnection ?: return
+        sendDirectionKey(ic, KeyEvent.KEYCODE_DPAD_LEFT, select, ctrl = true)
+    }
+
+    fun moveCursorWordRight(select: Boolean = false) {
+        val ic = inputConnection ?: return
+        sendDirectionKey(ic, KeyEvent.KEYCODE_DPAD_RIGHT, select, ctrl = true)
+    }
+
+    private fun sendDirectionKey(ic: InputConnection, keyCode: Int, select: Boolean, ctrl: Boolean = false) {
         try {
             val eventTime = android.os.SystemClock.uptimeMillis()
-            val metaState = if (select) KeyEvent.META_SHIFT_ON else 0
+            var metaState = 0
+            if (select) metaState = metaState or KeyEvent.META_SHIFT_ON
+            if (ctrl) metaState = metaState or KeyEvent.META_CTRL_ON
             ic.sendKeyEvent(KeyEvent(eventTime, eventTime, KeyEvent.ACTION_DOWN, keyCode, 0, metaState))
             ic.sendKeyEvent(KeyEvent(eventTime, eventTime, KeyEvent.ACTION_UP, keyCode, 0, metaState))
         } catch (_: Exception) {}
@@ -325,6 +337,33 @@ class InputConnectionManager {
         val ic = inputConnection ?: return
         try {
             ic.performContextMenuAction(android.R.id.cut)
+        } catch (_: Exception) {}
+    }
+
+    fun undo() {
+        val ic = inputConnection ?: return
+        try {
+            ic.performContextMenuAction(android.R.id.undo)
+        } catch (_: Exception) {
+            sendControlKey(KeyEvent.KEYCODE_Z)
+        }
+    }
+
+    fun redo() {
+        val ic = inputConnection ?: return
+        try {
+            ic.performContextMenuAction(android.R.id.redo)
+        } catch (_: Exception) {
+            sendControlKey(KeyEvent.KEYCODE_Y)
+        }
+    }
+
+    private fun sendControlKey(keyCode: Int) {
+        val ic = inputConnection ?: return
+        try {
+            val eventTime = android.os.SystemClock.uptimeMillis()
+            ic.sendKeyEvent(KeyEvent(eventTime, eventTime, KeyEvent.ACTION_DOWN, keyCode, 0, KeyEvent.META_CTRL_ON))
+            ic.sendKeyEvent(KeyEvent(eventTime, eventTime, KeyEvent.ACTION_UP, keyCode, 0, KeyEvent.META_CTRL_ON))
         } catch (_: Exception) {}
     }
 

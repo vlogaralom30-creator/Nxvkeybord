@@ -7,11 +7,14 @@ enum class KeyboardMode {
     NUMBERS,
     SYMBOLS,
     EMOJI,
+    STICKERS,
     CLIPBOARD,
     VAULT,
     TEXT_EDIT,
     NUMBER_PAD,
-    VOICE
+    VOICE,
+    MEDIA,
+    WEB_VIDEO
 }
 
 enum class OneHandedMode(val modeKey: String) {

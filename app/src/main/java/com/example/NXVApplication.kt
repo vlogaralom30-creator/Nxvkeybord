@@ -23,19 +23,25 @@ class NXVApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        preferences = KeyboardPreferences(this)
-        database = AppDatabase.getInstance(this)
-        credentialStorageService = EncryptedCredentialStorageService(this)
-        repository = KeyboardDataRepository(
-            clipboardDao = database.clipboardDao(),
-            shortcutDao = database.shortcutDao(),
-            dictionaryDao = database.dictionaryDao(),
-            credentialDao = database.credentialDao(),
-            encryptedCredentialStorage = credentialStorageService
-        )
+        try {
+            preferences = KeyboardPreferences(this)
+            database = AppDatabase.getInstance(this)
+            credentialStorageService = EncryptedCredentialStorageService(this)
+            repository = KeyboardDataRepository(
+                clipboardDao = database.clipboardDao(),
+                shortcutDao = database.shortcutDao(),
+                dictionaryDao = database.dictionaryDao(),
+                credentialDao = database.credentialDao(),
+                analyticsDao = database.analyticsDao(),
+                encryptedCredentialStorage = credentialStorageService
+            )
+        } catch (e: Throwable) {
+            android.util.Log.e("NXVApplication", "Error initializing application dependencies", e)
+        }
     }
 
     companion object {
+        @Volatile
         lateinit var instance: NXVApplication
             private set
     }
