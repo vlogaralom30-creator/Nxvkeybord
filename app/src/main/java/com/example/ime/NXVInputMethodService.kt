@@ -49,6 +49,7 @@ import com.example.ui.keyboard.AutoSavePromptData
 import com.example.ui.keyboard.KeyboardRootView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -582,8 +583,8 @@ class NXVInputMethodService : InputMethodService(),
             if (word.contains("@") || word.length >= 3) {
                 lastObservedUsername = word
             }
-            // Track letter typing analytics
-            serviceScope.launch {
+            // Track letter typing analytics in background without blocking Main thread
+            serviceScope.launch(Dispatchers.IO) {
                 val app = application as? NXVApplication ?: NXVApplication.instance
                 app.repository.recordLetterTyped(effectiveChar)
             }
@@ -839,8 +840,11 @@ class NXVInputMethodService : InputMethodService(),
         }
     }
 
+    private var refreshSuggestionsJob: Job? = null
+
     private fun refreshSuggestions() {
-        serviceScope.launch {
+        refreshSuggestionsJob?.cancel()
+        refreshSuggestionsJob = serviceScope.launch(Dispatchers.Default) {
             val settings = currentSettingsState.value
             val isPass = inputConnectionManager.isPasswordField()
 

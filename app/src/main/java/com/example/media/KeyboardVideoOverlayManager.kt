@@ -33,8 +33,24 @@ class KeyboardVideoOverlayManager private constructor(private val appContext: Co
     private val _isPlaying = MutableStateFlow(true)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
-    private val _isMuted = MutableStateFlow(prefs.getBoolean("overlay_muted", true))
+    private val _isMuted = MutableStateFlow(prefs.getBoolean("overlay_muted", false))
     val isMuted: StateFlow<Boolean> = _isMuted.asStateFlow()
+
+    // Volume range 0.0f to 1.0f (default 1.0f)
+    private val _volume = MutableStateFlow(prefs.getFloat("overlay_volume", 1.0f))
+    val volume: StateFlow<Float> = _volume.asStateFlow()
+
+    // Seek target in ms, consumed by player
+    private val _seekToMs = MutableStateFlow<Int?>(null)
+    val seekToMs: StateFlow<Int?> = _seekToMs.asStateFlow()
+
+    // When true, keys are rendered transparent floating text directly over video
+    private val _transparentKeyMode = MutableStateFlow(prefs.getBoolean("transparent_keys", true))
+    val transparentKeyMode: StateFlow<Boolean> = _transparentKeyMode.asStateFlow()
+
+    // When true, keyboard is in typing mode over video; when false, keyboard shows full video controls
+    private val _isVideoTypingMode = MutableStateFlow(prefs.getBoolean("video_typing_mode", false))
+    val isVideoTypingMode: StateFlow<Boolean> = _isVideoTypingMode.asStateFlow()
 
     // 0.1f to 1.0f (default 0.70f)
     private val _videoOpacity = MutableStateFlow(prefs.getFloat("overlay_opacity", 0.70f))
@@ -111,6 +127,48 @@ class KeyboardVideoOverlayManager private constructor(private val appContext: Co
     fun setMuted(muted: Boolean) {
         _isMuted.value = muted
         prefs.edit().putBoolean("overlay_muted", muted).apply()
+    }
+
+    fun setVolume(vol: Float) {
+        val clamped = vol.coerceIn(0.0f, 1.0f)
+        _volume.value = clamped
+        if (clamped > 0f && _isMuted.value) {
+            _isMuted.value = false
+            prefs.edit().putBoolean("overlay_muted", false).apply()
+        }
+        prefs.edit().putFloat("overlay_volume", clamped).apply()
+    }
+
+    fun setVolumePercent(percent: Int) {
+        setVolume(percent.coerceIn(0, 100) / 100f)
+    }
+
+    fun seekTo(posMs: Int) {
+        val maxDur = _durationMs.value
+        val clamped = if (maxDur > 0) posMs.coerceIn(0, maxDur) else posMs.coerceAtLeast(0)
+        _seekToMs.value = clamped
+        _currentPositionMs.value = clamped
+    }
+
+    fun seekRelative(deltaMs: Int) {
+        val current = _currentPositionMs.value
+        val maxDur = _durationMs.value
+        val target = if (maxDur > 0) (current + deltaMs).coerceIn(0, maxDur) else (current + deltaMs).coerceAtLeast(0)
+        seekTo(target)
+    }
+
+    fun onSeekHandled() {
+        _seekToMs.value = null
+    }
+
+    fun setTransparentKeyMode(enabled: Boolean) {
+        _transparentKeyMode.value = enabled
+        prefs.edit().putBoolean("transparent_keys", enabled).apply()
+    }
+
+    fun setVideoTypingMode(typingMode: Boolean) {
+        _isVideoTypingMode.value = typingMode
+        prefs.edit().putBoolean("video_typing_mode", typingMode).apply()
     }
 
     fun setVideoOpacity(opacity: Float) {

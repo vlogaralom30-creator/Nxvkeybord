@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Palette
@@ -376,9 +377,11 @@ fun SettingsHomeScreen(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = if (isRidmikActive) "💎" else "⚡",
-                                    fontSize = 13.sp
+                                Icon(
+                                    imageVector = if (isRidmikActive) Icons.Default.Layers else Icons.Default.Tune,
+                                    contentDescription = null,
+                                    tint = if (isRidmikActive) Color(0xFF0A84FF) else MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Column {

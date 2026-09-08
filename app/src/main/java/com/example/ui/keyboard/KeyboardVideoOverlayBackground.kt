@@ -35,9 +35,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 fun KeyboardVideoOverlayBackground(
     videoUri: Uri,
     isPlaying: Boolean,
-    isMuted: Boolean,
+    isMuted: Boolean = false,
+    volume: Float = 1.0f,
+    seekToMs: Int? = null,
     videoOpacity: Float,
     dimOverlay: Float,
+    onSeekHandled: () -> Unit = {},
     onPositionChanged: (posMs: Int, durationMs: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -46,13 +49,26 @@ fun KeyboardVideoOverlayBackground(
     var surfaceTextureRef by remember { mutableStateOf<SurfaceTexture?>(null) }
     var isPrepared by remember { mutableStateOf(false) }
 
-    // Sync volume with isMuted
-    LaunchedEffect(isMuted, mediaPlayer) {
+    // Sync volume with isMuted & volume float
+    LaunchedEffect(isMuted, volume, mediaPlayer) {
         mediaPlayer?.let { mp ->
             try {
-                val vol = if (isMuted) 0f else 1.0f
+                val vol = if (isMuted) 0f else volume.coerceIn(0f, 1f)
                 mp.setVolume(vol, vol)
             } catch (_: Exception) {}
+        }
+    }
+
+    // Sync seek target
+    LaunchedEffect(seekToMs, isPrepared, mediaPlayer) {
+        val target = seekToMs
+        if (target != null && isPrepared) {
+            mediaPlayer?.let { mp ->
+                try {
+                    mp.seekTo(target)
+                } catch (_: Exception) {}
+            }
+            onSeekHandled()
         }
     }
 

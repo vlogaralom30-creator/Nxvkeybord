@@ -57,6 +57,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.theme.Cat3dPopupCharacter
 import com.example.theme.CatThemeIcons
+import com.example.theme.FreeFireAvatarKeyContent
+import com.example.theme.FreeFireThemeAssetManager
+import com.example.theme.FreeFireThemeIcons
 import com.example.theme.KeyPopupStyle
 import com.example.theme.KeyboardPalette
 import com.example.theme.KittyThemeIcons
@@ -94,14 +97,15 @@ fun KeyboardKeyView(
     onHoldCancelled: (() -> Unit)? = null,
     onHorizontalDrag: ((Float) -> Unit)? = null,
     onTap: () -> Unit,
-    onLongPress: (() -> Unit)? = null
+    onLongPress: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null
 ) {
     var isPressed by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.94f else 1.0f,
-        animationSpec = tween(durationMillis = 60),
+        animationSpec = tween(durationMillis = 35),
         label = "key_scale"
     )
 
@@ -113,14 +117,35 @@ fun KeyboardKeyView(
         RgbSpectrumUtils.getColorForKey(label, columnIndex, totalColumns)
     }
 
+    val isFreeFire = palette.specialIconStyle == ThemeSpecialIconStyle.FREE_FIRE_BLACK_GOLD
+    val isFreeFireAvatar = isFreeFire && label.length == 1 && FreeFireThemeAssetManager.isAvatarKey(label)
+
+    val isTransparentKey = palette.keyBackground == Color.Transparent
+    val isRetroMech = !isTransparentKey && palette.specialIconStyle == ThemeSpecialIconStyle.RETRO_MECH
+    val isCat3d = !isTransparentKey && palette.specialIconStyle == ThemeSpecialIconStyle.CAT_3D_SLATE
+    val isCat3dCreamKey = isCat3d && (
+        (label.length == 1 && "qwertyuiopQWERTYUIOP".contains(label[0])) ||
+        isPrimaryAction || label == "↵" || label == "return" || label == "Go" || label == "Done" || label == "Search" || label == "Enter"
+    )
+
     // Determine Key Background Color based on Theme & State
     val bgColor = when {
+        isTransparentKey -> if (isPressed) Color.White.copy(alpha = 0.22f) else Color.Transparent
         isRgbNeon -> {
             if (isPressed) rgbNeonColor.copy(alpha = 0.28f)
             else palette.keyBackground
         }
+        isFreeFire -> {
+            when {
+                isPressed -> Color(0xFF28200B)
+                isCapsLock -> Color(0xFF33270A)
+                isPrimaryAction -> palette.accentColor
+                isSpecialAction || isShiftActive -> Color(0xEE161A22)
+                else -> palette.keyBackground
+            }
+        }
         isPressed -> when {
-            palette.popupStyle == KeyPopupStyle.PUPPY_CHARACTER && label.length == 1 && label[0].isLetter() -> palette.keyPressedBackground // Vibrant blue for Puppy Pop!
+            palette.popupStyle == KeyPopupStyle.PUPPY_CHARACTER && label.length == 1 && label[0].isLetter() -> palette.keyPressedBackground
             isCapsLock -> palette.accentColor.copy(alpha = 0.85f)
             isPrimaryAction -> palette.accentColor
             isSpecialAction || isShiftActive -> palette.keyPressedBackground
@@ -133,18 +158,12 @@ fun KeyboardKeyView(
         isSpecialAction -> palette.keyActionBackground
         else -> palette.keyBackground
     }
-
-    val isRetroMech = palette.specialIconStyle == ThemeSpecialIconStyle.RETRO_MECH
-    val isCat3d = palette.specialIconStyle == ThemeSpecialIconStyle.CAT_3D_SLATE
-    val isCat3dCreamKey = isCat3d && (
-        (label.length == 1 && "qwertyuiopQWERTYUIOP".contains(label[0])) ||
-        isPrimaryAction || label == "↵" || label == "return" || label == "Go" || label == "Done" || label == "Search" || label == "Enter"
-    )
     val isKeyOrange = label == "Space" || (isSpaceBar && palette.spacebarStyle == SpacebarStyle.RETRO_MECH_SPACE)
     val isKeyWhite = isAlphabeticKey || label == "😊" || label == "🌐" || label == "." || label == "," || label == " Smiley" || label.contains("smiley") || label == "Emoji"
 
     // Determine Label Text Color based on Theme & State
     val labelColor = when {
+        isTransparentKey -> Color.White
         isRgbNeon -> {
             if (isPressed) Color.White else rgbNeonColor
         }
@@ -179,38 +198,41 @@ fun KeyboardKeyView(
 
     // Key shape & elevation from theme
     val cornerShape = RoundedCornerShape(palette.keyCornerRadius)
-    val elevation = if (isPressed) palette.pressedElevation else palette.keyElevation
+    val elevation = if (isTransparentKey) 0.dp else if (isPressed) palette.pressedElevation else palette.keyElevation
     val borderColor = when {
+        isTransparentKey -> if (isPressed) Color.White.copy(alpha = 0.35f) else Color.Transparent
         isRgbNeon -> if (isPressed) Color.White else rgbNeonColor
+        isFreeFire -> if (isPressed) Color(0xFFFFEA79) else if (isShiftActive || isCapsLock) Color(0xFFFFD700) else palette.keyBorderColor
         isPrimaryAction && palette.specialIconStyle != ThemeSpecialIconStyle.STRAWBERRY_DESSERT -> Color.Transparent
         else -> palette.keyBorderColor
     }
-    val effectiveBorderWidth = if (isRgbNeon) 1.8.dp else palette.keyBorderWidth
+    val effectiveBorderWidth = if (isTransparentKey) (if (isPressed) 0.8.dp else 0.dp) else if (isRgbNeon) 1.8.dp else palette.keyBorderWidth
 
     val gestureModifier = if (isSpaceBar && (onHorizontalDrag != null || onLongPress != null)) {
         Modifier.pointerInput(onHorizontalDrag, onLongPress) {
             awaitEachGesture {
-                val down = awaitFirstDown()
+                val down = awaitFirstDown(requireUnconsumed = false)
                 isPressed = true
                 var isDragging = false
                 var isLongPressed = false
                 val touchSlop = viewConfiguration.touchSlop
-                val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+                val longPressTimeout = 320L
 
-                val longPressJob = coroutineScope.launch {
-                    delay(longPressTimeout)
-                    if (!isDragging) {
-                        isLongPressed = true
-                        onLongPress?.invoke()
+                val longPressJob = if (onLongPress != null) {
+                    coroutineScope.launch {
+                        delay(longPressTimeout)
+                        if (!isDragging) {
+                            isLongPressed = true
+                            onLongPress.invoke()
+                        }
                     }
-                }
+                } else null
 
                 while (true) {
                     val event = awaitPointerEvent()
                     val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                    if (change.isConsumed) break
                     if (!change.pressed) {
-                        longPressJob.cancel()
+                        longPressJob?.cancel()
                         if (!isDragging && !isLongPressed) {
                             onTap()
                         }
@@ -219,7 +241,7 @@ fun KeyboardKeyView(
                     val totalDist = kotlin.math.abs(change.position.x - down.position.x)
                     if (!isDragging && totalDist > touchSlop) {
                         isDragging = true
-                        longPressJob.cancel()
+                        longPressJob?.cancel()
                     }
                     if (isDragging) {
                         val dx = change.positionChange().x
@@ -232,30 +254,26 @@ fun KeyboardKeyView(
                 isPressed = false
             }
         }
-    } else if (onFiveSecondHoldComplete != null && isAlphabeticKey) {
-        Modifier.pointerInput(label, isAlphabeticKey) {
+    } else if (isRepeatable) {
+        // Backspace: Immediate deletion on ACTION_DOWN (0.00s latency) and fast accelerating repeat
+        Modifier.pointerInput(Unit) {
             awaitEachGesture {
-                val down = awaitFirstDown()
+                val down = awaitFirstDown(requireUnconsumed = false)
                 isPressed = true
-                var is5sCompleted = false
-                val startTime = System.currentTimeMillis()
-                val total5sMs = 5000L
+                onTap() // Immediate 0.00s deletion on touch down!
 
-                val timerJob = coroutineScope.launch {
-                    val updateInterval = 50L
-                    var elapsed = 0L
-                    while (isActive && elapsed < total5sMs) {
-                        delay(updateInterval)
-                        elapsed += updateInterval
-                        if (elapsed >= 300L) {
-                            val progress = ((elapsed - 300L).toFloat() / (total5sMs - 300L)).coerceIn(0f, 1f)
-                            onHoldProgressUpdate?.invoke(progress)
-                        }
-                        if (elapsed >= total5sMs) {
-                            is5sCompleted = true
-                            onFiveSecondHoldComplete.invoke()
-                            onHoldCancelled?.invoke()
-                            break
+                val repeatJob = coroutineScope.launch {
+                    delay(300L) // initial hold delay before repeating
+                    var currentDelay = 55L
+                    var holdDuration = 0L
+                    while (isActive) {
+                        onTap()
+                        delay(currentDelay)
+                        holdDuration += currentDelay
+                        if (holdDuration > 1200L) {
+                            currentDelay = 28L
+                        } else if (holdDuration > 600L) {
+                            currentDelay = 40L
                         }
                     }
                 }
@@ -264,17 +282,7 @@ fun KeyboardKeyView(
                     val event = awaitPointerEvent()
                     val change = event.changes.firstOrNull { it.id == down.id } ?: break
                     if (!change.pressed) {
-                        timerJob.cancel()
-                        onHoldCancelled?.invoke()
-                        val pressDuration = System.currentTimeMillis() - startTime
-
-                        if (!is5sCompleted) {
-                            if (pressDuration < 450L) {
-                                onTap()
-                            } else {
-                                onLongPress?.invoke() ?: onTap()
-                            }
-                        }
+                        repeatJob.cancel()
                         break
                     }
                 }
@@ -282,52 +290,51 @@ fun KeyboardKeyView(
             }
         }
     } else {
-        Modifier.pointerInput(isRepeatable) {
-            detectTapGestures(
-                onPress = {
-                    isPressed = true
-                    if (isRepeatable) {
-                        onTap()
-                        val repeatJob = coroutineScope.launch {
-                            delay(380L)
-                            var currentDelay = 65L
-                            var holdDuration = 0L
-                            while (isActive) {
-                                onTap()
-                                delay(currentDelay)
-                                holdDuration += currentDelay
-                                if (holdDuration > 1400L) {
-                                    currentDelay = 35L
-                                } else if (holdDuration > 700L) {
-                                    currentDelay = 50L
-                                }
-                            }
+        // High-Speed Instant Zero-Latency Typing (0.01s / Instantaneous on DOWN):
+        // All alphabetic, Bangla, numeric, punctuation, symbol, enter, and shift keys trigger instantly on DOWN!
+        Modifier.pointerInput(label, isAlphabeticKey, onLongPress) {
+            awaitEachGesture {
+                // Multi-touch safe: requireUnconsumed = false ensures rapid typing with 2 thumbs never misses a key!
+                val down = awaitFirstDown(requireUnconsumed = false)
+                isPressed = true
+
+                // Letters, Bangla characters, and keys without special hold menus trigger IMMEDIATELY on touch down!
+                val shouldTriggerOnDown = isAlphabeticKey || onLongPress == null
+                var didTriggerOnDown = false
+
+                if (shouldTriggerOnDown) {
+                    onTap()
+                    didTriggerOnDown = true
+                }
+
+                var isLongPressed = false
+                val longPressJob = if (onLongPress != null) {
+                    coroutineScope.launch {
+                        delay(320L)
+                        isLongPressed = true
+                        // If character was already typed on down, delete it first so the alternate hint replaces it cleanly
+                        if (didTriggerOnDown && onDelete != null) {
+                            onDelete.invoke()
                         }
-                        try {
-                            tryAwaitRelease()
-                        } finally {
-                            repeatJob.cancel()
-                            isPressed = false
-                        }
-                    } else {
-                        try {
-                            tryAwaitRelease()
-                        } finally {
-                            isPressed = false
-                        }
+                        onLongPress.invoke()
                     }
-                },
-                onTap = {
-                    if (!isRepeatable) {
-                        onTap()
-                    }
-                },
-                onLongPress = {
-                    if (!isRepeatable) {
-                        onLongPress?.invoke() ?: onTap()
+                } else null
+
+                // Continuous pointer tracking: NEVER break on change.isConsumed so multi-touch never cancels the key!
+                while (true) {
+                    val event = awaitPointerEvent()
+                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                    if (!change.pressed) {
+                        longPressJob?.cancel()
+                        // If not triggered on down (e.g. language key with picker) and not long-pressed, trigger on tap
+                        if (!didTriggerOnDown && !isLongPressed) {
+                            onTap()
+                        }
+                        break
                     }
                 }
-            )
+                isPressed = false
+            }
         }
     }
 
@@ -484,6 +491,34 @@ fun KeyboardKeyView(
         ) {
             // Check for theme-specific special icon drawings
             when {
+                // FREE FIRE BLACK GOLD SPECIAL DRAWINGS
+                isFreeFire && isFreeFireAvatar -> {
+                    FreeFireAvatarKeyContent(
+                        char = label,
+                        isPressed = isPressed,
+                        keyHeight = height
+                    )
+                }
+                isFreeFire && (label == "⇧" || label == "⬆" || label == "⇪") -> {
+                    FreeFireThemeIcons.FreeFireShiftIcon(
+                        size = (height * 0.52f).coerceIn(18.dp, 24.dp),
+                        isShifted = isShiftActive,
+                        isCapsLock = isCapsLock
+                    )
+                }
+                isFreeFire && label == "⌫" -> {
+                    FreeFireThemeIcons.FreeFireBackspaceIcon(
+                        size = (height * 0.52f).coerceIn(18.dp, 24.dp),
+                        isPressed = isPressed
+                    )
+                }
+                isFreeFire && (isPrimaryAction || label == "↵" || label == "return" || label == "Go" || label == "Done" || label == "Search" || label == "Enter") -> {
+                    FreeFireThemeIcons.FreeFireEnterKeyContent(
+                        label = label,
+                        isPressed = isPressed
+                    )
+                }
+
                 // CAT 3D SLATE SPECIAL DRAWINGS
                 palette.specialIconStyle == ThemeSpecialIconStyle.CAT_3D_SLATE && (label == "⇧" || label == "⬆" || label == "⇪") -> {
                     CatThemeIcons.CatShiftIcon(
@@ -700,6 +735,30 @@ fun KeyboardKeyView(
                 else -> {
                     if (isSpaceBar) {
                         when (palette.spacebarStyle) {
+                            SpacebarStyle.FREE_FIRE_BAR -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = palette.spacebarWatermark ?: "FREE FIRE",
+                                        color = Color(0xFFFFD700),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Black,
+                                        letterSpacing = 1.8.sp
+                                    )
+                                    // Fine gold accent brackets at left and right
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .padding(bottom = 3.dp)
+                                            .width(42.dp)
+                                            .height(2.dp)
+                                            .clip(RoundedCornerShape(1.dp))
+                                            .background(Color(0x88FFD700))
+                                    )
+                                }
+                            }
                             SpacebarStyle.RGB_NEON_BAR -> {
                                 Box(
                                     modifier = Modifier.fillMaxSize(),
@@ -943,6 +1002,36 @@ fun KeyboardKeyView(
         // Popup Preview when pressed based on popupMode
         if (isPressed && showPreview && popupMode != "disabled" && label.length == 1) {
             when {
+                popupMode == "popup" && palette.popupStyle == KeyPopupStyle.FREE_FIRE_POPUP -> {
+                    // Battle Royale Gaming Gold Popup
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .offset(y = (-54).dp)
+                            .size(50.dp)
+                            .zIndex(99f)
+                            .shadow(12.dp, RoundedCornerShape(12.dp), spotColor = Color(0xFFFFD700))
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF090B0F))
+                            .border(2.dp, Color(0xFFFFD700), RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isFreeFireAvatar) {
+                            FreeFireAvatarKeyContent(
+                                char = label,
+                                isPressed = true,
+                                keyHeight = height
+                            )
+                        } else {
+                            Text(
+                                text = label.uppercase(),
+                                color = Color(0xFFFFD700),
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                    }
+                }
                 popupMode == "popup" && palette.popupStyle == KeyPopupStyle.RGB_NEON_POPUP -> {
                     // Sleek AMOLED black popup with vivid neon glowing border and letter
                     Box(

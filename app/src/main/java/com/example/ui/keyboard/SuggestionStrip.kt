@@ -51,7 +51,11 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -147,6 +151,14 @@ fun SuggestionStrip(
     onOpenVideoOverlaySettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var forceShowSixIconsInBar by remember { mutableStateOf(false) }
+
+    LaunchedEffect(suggestions) {
+        if (suggestions.isNotEmpty()) {
+            forceShowSixIconsInBar = false
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -229,21 +241,24 @@ fun SuggestionStrip(
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Expand / Collapse Chevron Button
+                // Expand / Collapse Chevron Button (Single tap toggles toolbar, double-tap toggles 6-icon action bar - Ridmik style!)
                 Box(
                     modifier = Modifier
                         .padding(start = 2.dp, end = 2.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(
-                            if (isToolbarExpanded) palette.accentColor.copy(alpha = 0.20f)
+                            if (forceShowSixIconsInBar || isToolbarExpanded) palette.accentColor.copy(alpha = 0.20f)
                             else palette.keyActionBackground.copy(alpha = 0.65f)
                         )
                         .border(
                             width = 0.8.dp,
-                            color = if (isToolbarExpanded) palette.accentColor.copy(alpha = 0.5f) else palette.keyBorderColor.copy(alpha = 0.3f),
+                            color = if (forceShowSixIconsInBar || isToolbarExpanded) palette.accentColor.copy(alpha = 0.5f) else palette.keyBorderColor.copy(alpha = 0.3f),
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .clickable { onToggleToolbar() }
+                        .combinedClickable(
+                            onClick = { onToggleToolbar() },
+                            onDoubleClick = { forceShowSixIconsInBar = !forceShowSixIconsInBar }
+                        )
                         .padding(horizontal = 6.dp, vertical = 5.dp)
                         .testTag("toolbar_expand_toggle"),
                     contentAlignment = Alignment.Center
@@ -255,7 +270,7 @@ fun SuggestionStrip(
                         Icon(
                             imageVector = if (isToolbarExpanded) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
                             contentDescription = if (isToolbarExpanded) "Collapse Toolbar" else "Expand Toolbar",
-                            tint = if (isToolbarExpanded) palette.accentColor else palette.textColor,
+                            tint = if (forceShowSixIconsInBar || isToolbarExpanded) palette.accentColor else palette.textColor,
                             modifier = Modifier.size(16.dp)
                         )
                         if (!isToolbarExpanded && clipboardCount > 0) {
@@ -269,7 +284,7 @@ fun SuggestionStrip(
                     }
                 }
 
-                // Suggestions Area, Live Voice Bar, or TikTok Downloader Bar
+                // Suggestions Area, Live Voice Bar, TikTok Downloader Bar, or 6-Icon Action Bar
                 if (isVoiceListening) {
                     LiveVoiceSuggestionContent(
                         voiceStatus = voiceStatusText,
@@ -297,16 +312,17 @@ fun SuggestionStrip(
                         onPlayInKeyboard = onTikTokPlayInKeyboard,
                         modifier = Modifier.weight(1f)
                     )
-                } else if (activeMediaTitle.isNotBlank()) {
-                    MusicPlayerSuggestionBar(
-                        title = activeMediaTitle,
-                        isPlaying = isMediaPlaying,
-                        currentPosMs = mediaCurrentPosMs,
-                        durationMs = mediaDurationMs,
+                } else if (forceShowSixIconsInBar || (suggestions.isEmpty() && recentClip == null)) {
+                    // 6 Essential Quick Action Icons: Copypad, Text, Number, Themes, Media, Settings
+                    SixQuickIconsRow(
                         palette = palette,
-                        onTogglePlayPause = onMediaTogglePlayPause,
-                        onOpenMediaBrowser = onMediaOpenBrowser,
-                        onClosePlayer = onMediaClosePlayer,
+                        clipboardCount = clipboardCount,
+                        onClipboardClick = onClipboardClick,
+                        onTextEditClick = onTextEditClick,
+                        onNumberPadClick = onNumberPadClick,
+                        onThemesClick = onThemesClick,
+                        onMediaClick = onMediaClick,
+                        onSettingsClick = onSettingsClick,
                         modifier = Modifier.weight(1f)
                     )
                 } else {
@@ -473,14 +489,42 @@ fun SuggestionStrip(
                     }
                 }
 
-                // Voice Mic Button (Positioned on the RIGHT side of the suggestion bar)
+                // Voice Mic Button / Media Controller (Converts to Play/Pause when audio is playing)
                 if (showSuggestionMicIcon) {
-                    VoiceMicButton(
-                        isListening = isVoiceListening,
-                        palette = palette,
-                        onClick = if (isVoiceListening) onStopVoice else onVoiceClick,
-                        modifier = Modifier.padding(start = 2.dp, end = 2.dp)
-                    )
+                    if (activeMediaTitle.isNotBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 2.dp, end = 2.dp)
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (isMediaPlaying) palette.accentColor
+                                    else palette.keyActionBackground.copy(alpha = 0.85f)
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isMediaPlaying) palette.accentColor else palette.keyBorderColor.copy(alpha = 0.4f),
+                                    shape = CircleShape
+                                )
+                                .clickable { onMediaTogglePlayPause() }
+                                .testTag("media_controller_mic_btn"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isMediaPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = if (isMediaPlaying) "Pause Audio" else "Play Audio",
+                                tint = if (isMediaPlaying) Color.White else palette.textColor,
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
+                    } else {
+                        VoiceMicButton(
+                            isListening = isVoiceListening,
+                            palette = palette,
+                            onClick = if (isVoiceListening) onStopVoice else onVoiceClick,
+                            modifier = Modifier.padding(start = 2.dp, end = 2.dp)
+                        )
+                    }
                 }
             }
 
@@ -755,3 +799,135 @@ private fun ActionToolChip(
         }
     }
 }
+
+@Composable
+fun SixQuickIconsRow(
+    palette: KeyboardPalette,
+    clipboardCount: Int,
+    onClipboardClick: () -> Unit,
+    onTextEditClick: () -> Unit,
+    onNumberPadClick: () -> Unit,
+    onThemesClick: () -> Unit,
+    onMediaClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 1. Copypad / Clipboard
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .clickable { onClipboardClick() }
+                .testTag("quick_bar_clipboard"),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.ContentPaste,
+                contentDescription = "Clipboard / Copypad",
+                tint = palette.textColor.copy(alpha = 0.85f),
+                modifier = Modifier.size(17.dp)
+            )
+            if (clipboardCount > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 4.dp, end = 4.dp)
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(palette.accentColor)
+                )
+            }
+        }
+
+        // 2. Text Edit Pad
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .clickable { onTextEditClick() }
+                .testTag("quick_bar_text_edit"),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Text Edit",
+                tint = palette.textColor.copy(alpha = 0.85f),
+                modifier = Modifier.size(17.dp)
+            )
+        }
+
+        // 3. Number Pad
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .clickable { onNumberPadClick() }
+                .testTag("quick_bar_number_pad"),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Dialpad,
+                contentDescription = "Number Pad",
+                tint = palette.textColor.copy(alpha = 0.85f),
+                modifier = Modifier.size(17.dp)
+            )
+        }
+
+        // 4. Themes
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .clickable { onThemesClick() }
+                .testTag("quick_bar_themes"),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Palette,
+                contentDescription = "Themes",
+                tint = palette.textColor.copy(alpha = 0.85f),
+                modifier = Modifier.size(17.dp)
+            )
+        }
+
+        // 5. Video / Media
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .clickable { onMediaClick() }
+                .testTag("quick_bar_media"),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Videocam,
+                contentDescription = "Video & Audio Media",
+                tint = palette.accentColor,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        // 6. Settings
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .clickable { onSettingsClick() }
+                .testTag("quick_bar_settings"),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Settings",
+                tint = palette.textColor.copy(alpha = 0.85f),
+                modifier = Modifier.size(17.dp)
+            )
+        }
+    }
+}
+

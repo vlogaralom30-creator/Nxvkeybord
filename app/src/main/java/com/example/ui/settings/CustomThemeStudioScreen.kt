@@ -46,21 +46,28 @@ import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEmotions
+import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.FormatPaint
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Mood
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SmartDisplay
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.SwitchVideo
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Vibration
@@ -187,12 +194,17 @@ fun CustomThemeStudioScreen(
         }
     }
 
-    val tabTitles = listOf(
-        "🎨 Colors & Font",
-        "🖼️ Photo BG",
-        "📐 Sizing & Gap",
-        "🛠️ Shortcuts",
-        "🎭 Theme Icons"
+    data class StudioTab(
+        val title: String,
+        val icon: androidx.compose.ui.graphics.vector.ImageVector
+    )
+
+    val studioTabs = listOf(
+        StudioTab("Colors & Font", Icons.Default.Palette),
+        StudioTab("Photo BG", Icons.Default.Image),
+        StudioTab("Sizing & Gap", Icons.Default.Straighten),
+        StudioTab("Shortcuts", Icons.Default.Tune),
+        StudioTab("Theme Icons", Icons.Default.FormatPaint)
     )
 
     Scaffold(
@@ -207,6 +219,34 @@ fun CustomThemeStudioScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    Button(
+                        onClick = {
+                            onUpdateCustomThemeEnabled(true)
+                            android.widget.Toast.makeText(context, "All custom theme & layout settings saved!", android.widget.Toast.LENGTH_SHORT).show()
+                            onBack()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = "Save Settings",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Save",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -224,6 +264,7 @@ fun CustomThemeStudioScreen(
             Card(
                 shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -239,7 +280,9 @@ fun CustomThemeStudioScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("✨ Live Preview", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Icon(Icons.Default.Keyboard, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Live Preview", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             if (settings.customThemeEnabled) {
                                 Box(
@@ -390,15 +433,22 @@ fun CustomThemeStudioScreen(
                 containerColor = MaterialTheme.colorScheme.background,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                tabTitles.forEachIndexed { index, title ->
+                studioTabs.forEachIndexed { index, tab ->
                     Tab(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
+                        icon = {
+                            Icon(
+                                imageVector = tab.icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
                         text = {
                             Text(
-                                text = title,
+                                text = tab.title,
                                 fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 13.sp
+                                fontSize = 12.sp
                             )
                         }
                     )
@@ -986,21 +1036,21 @@ private fun ShortcutsTabContent(
     onUpdateToolbarPosition: (String) -> Unit
 ) {
     val allAvailableShortcuts = listOf(
-        ShortcutDef("clipboard", "📋 Copypad / Clipboard", "কপিকৃত টেক্সট তালিকা ও হিস্টরি", Icons.Default.ContentPaste),
-        ShortcutDef("themes", "🎨 Theme Studio", "থিম ও কাস্টম কালার পরিবর্তন", Icons.Default.Palette),
-        ShortcutDef("text_edit", "✏️ Text Edit Pad", "সিলেক্ট, কাট, কপি, পেস্ট ও কার্সার জয়স্টিক", Icons.Default.Edit),
-        ShortcutDef("numpad", "🔢 Dialer / Numpad", "ফোন ডায়ালপ্যাড ও নাম্বার প্যাড", Icons.Default.Dialpad),
-        ShortcutDef("voice", "🎤 Voice Typing", "বাংলা ও ইংরেজি ভয়েস টাইপিং", Icons.Default.Mic),
-        ShortcutDef("video_overlay", "🎬 Video Overlay", "কিবোর্ড ব্যাকগ্রাউন্ডে ভিডিও প্লে", Icons.Default.SwitchVideo),
-        ShortcutDef("tiktok", "📥 TikTok Downloader", "ওয়াটারমার্ক ছাড়া সোশ্যাল ভিডিও ডাউনলোডার", Icons.Default.Download),
-        ShortcutDef("stickers", "✨ Stickers Gallery", "বাংলা ফানি ও রিদমিক স্টিকার", Icons.Default.AutoAwesome),
-        ShortcutDef("media", "🎵 In-Keyboard Media", "টাইপিং করার সময় মিউজিক অডিও প্লেয়ার", Icons.Default.Audiotrack),
-        ShortcutDef("vault", "🔐 Password Vault", "অটো সেভড পাসওয়ার্ড ও সিকিউর অটোফিল", Icons.Default.Lock),
-        ShortcutDef("language", "🌐 Language Switcher", "English, বাংলা ও অভ্র সাইকেল", Icons.Default.Language),
-        ShortcutDef("vibration", "📳 Vibration Toggle", "ক্লিক ভাইব্রেশন চালু/বন্ধ", Icons.Default.Vibration),
-        ShortcutDef("sound", "🔊 Sound Toggle", "বাটন সাউন্ড চালু/বন্ধ", Icons.Default.VolumeUp),
-        ShortcutDef("one_handed", "📱 One-Handed Mode", "এক হাতে টাইপ করার আর্ক মোড", Icons.Default.AspectRatio),
-        ShortcutDef("settings", "⚙️ Keyboard Settings", "মেইন অ্যাপ ও ফুল সেটিংস পেজ", Icons.Default.Settings)
+        ShortcutDef("clipboard", "Copypad / Clipboard", "কপিকৃত টেক্সট তালিকা ও হিস্টরি", Icons.Default.ContentPaste),
+        ShortcutDef("themes", "Theme Studio", "থিম ও কাস্টম কালার পরিবর্তন", Icons.Default.Palette),
+        ShortcutDef("text_edit", "Text Edit Pad", "সিলেক্ট, কাট, কপি, পেস্ট ও কার্সার জয়স্টিক", Icons.Default.Edit),
+        ShortcutDef("numpad", "Dialer / Numpad", "ফোন ডায়ালপ্যাড ও নাম্বার প্যাড", Icons.Default.Dialpad),
+        ShortcutDef("voice", "Voice Typing", "বাংলা ও ইংরেজি ভয়েস টাইপিং", Icons.Default.Mic),
+        ShortcutDef("video_overlay", "Video Overlay", "কিবোর্ড ব্যাকগ্রাউন্ডে ভিডিও প্লে", Icons.Default.SwitchVideo),
+        ShortcutDef("tiktok", "Social Video Downloader", "ওয়াটারমার্ক ছাড়া সোশ্যাল ভিডিও ডাউনলোডার", Icons.Default.Download),
+        ShortcutDef("stickers", "Stickers Gallery", "বাংলা ফানি ও রিদমিক স্টিকার", Icons.Default.AutoAwesome),
+        ShortcutDef("media", "In-Keyboard Media", "টাইপিং করার সময় মিউজিক অডিও প্লেয়ার", Icons.Default.Audiotrack),
+        ShortcutDef("vault", "Password Vault", "অটো সেভড পাসওয়ার্ড ও সিকিউর অটোফিল", Icons.Default.Lock),
+        ShortcutDef("language", "Language Switcher", "English, বাংলা ও অভ্র সাইকেল", Icons.Default.Language),
+        ShortcutDef("vibration", "Vibration Toggle", "ক্লিক ভাইব্রেশন চালু/বন্ধ", Icons.Default.Vibration),
+        ShortcutDef("sound", "Sound Toggle", "বাটন সাউন্ড চালু/বন্ধ", Icons.Default.VolumeUp),
+        ShortcutDef("one_handed", "One-Handed Mode", "এক হাতে টাইপ করার আর্ক মোড", Icons.Default.AspectRatio),
+        ShortcutDef("settings", "Keyboard Settings", "মেইন অ্যাপ ও ফুল সেটিংস পেজ", Icons.Default.Settings)
     )
 
     val currentOrderList = remember(settings.shortcutOrder) {
@@ -1018,6 +1068,7 @@ private fun ShortcutsTabContent(
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1028,7 +1079,7 @@ private fun ShortcutsTabContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("🎤 ভয়েস মাইক আইকন দেখান (Voice Mic Icon)", fontSize = 13.sp)
+                    Text("ভয়েস মাইক আইকন দেখান (Voice Mic Icon)", fontSize = 13.sp)
                     Switch(checked = settings.showSuggestionMicIcon, onCheckedChange = onUpdateShowSuggestionMic)
                 }
 
@@ -1037,7 +1088,7 @@ private fun ShortcutsTabContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("🎬 ভিডিও প্লে/পজ আইকন দেখান (Video Overlay Icon)", fontSize = 13.sp)
+                    Text("ভিডিও প্লে/পজ আইকন দেখান (Video Overlay Icon)", fontSize = 13.sp)
                     Switch(checked = settings.showSuggestionVideoIcon, onCheckedChange = onUpdateShowSuggestionVideo)
                 }
 
@@ -1046,7 +1097,7 @@ private fun ShortcutsTabContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("📋 কুইক পেস্ট চিপ দেখান (Quick Paste Chip)", fontSize = 13.sp)
+                    Text("কুইক পেস্ট চিপ দেখান (Quick Paste Chip)", fontSize = 13.sp)
                     Switch(checked = settings.showQuickPasteChip, onCheckedChange = onUpdateShowQuickPaste)
                 }
             }
@@ -1056,6 +1107,7 @@ private fun ShortcutsTabContent(
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1173,20 +1225,21 @@ private fun ThemeIconsTabContent(
     onUpdateIconStyle: (String) -> Unit
 ) {
     val iconStyles = listOf(
-        IconStyleOption("standard", "Standard Minimal", "ক্লিন ও স্ট্যান্ডার্ড অ্যান্ড্রয়েড আইকন স্টাইল", "🔘"),
-        IconStyleOption("retro_mech", "3D Retro Mech", "রেট্রো মেকানিক্যাল কিবোর্ড আর্টওয়ার্ক", "⌨️"),
-        IconStyleOption("kawaii_kitten", "Kawaii Kitten", "মিষ্টি ও কিউট বিড়াল অ্যানিমে আইকন", "🐱"),
-        IconStyleOption("puppy_pop", "Puppy Pop", "হোয়াইট পাপি কিউট থিম আইকন", "🐶"),
-        IconStyleOption("strawberry", "Strawberry Dessert", "স্ট্রবেরি ডেজার্ট প্যাস্টেল মিষ্টি আইকন", "🍓"),
-        IconStyleOption("rgb", "RGB Chroma Neon", "নিয়ন গেমিং ব্যাকলিট ভাইব্র্যান্ট আইকন", "🌈"),
-        IconStyleOption("cat", "3D Slate Cat", "3D ডার্ক স্লেট ক্যাট কিবোর্ড আইকন", "🐾"),
-        IconStyleOption("minimal", "Reference Minimal", "প্রো মিনিমাল আউটলাইন আইকন", "✨")
+        IconStyleOption("standard", "Standard Minimal", "ক্লিন ও স্ট্যান্ডার্ড অ্যান্ড্রয়েড আইকন স্টাইল", Icons.Default.Tune),
+        IconStyleOption("retro_mech", "Retro Mech", "রেট্রো মেকানিক্যাল কিবোর্ড আর্টওয়ার্ক", Icons.Default.Keyboard),
+        IconStyleOption("kawaii_kitten", "Kawaii Kitten", "মিষ্টি ও কিউট বিড়াল আর্টওয়ার্ক আইকন", Icons.Default.Pets),
+        IconStyleOption("puppy_pop", "Puppy Pop", "হোয়াইট পাপি কিউট থিম আইকন", Icons.Default.Pets),
+        IconStyleOption("strawberry", "Pastel Dessert", "স্ট্রবেরি ডেজার্ট প্যাস্টেল মিষ্টি আইকন", Icons.Default.AutoAwesome),
+        IconStyleOption("rgb", "RGB Chroma Neon", "নিয়ন গেমিং ব্যাকলিট ভাইব্র্যান্ট আইকন", Icons.Default.ColorLens),
+        IconStyleOption("cat", "Dark Slate Cat", "ডার্ক স্লেট ক্যাট কিবোর্ড আইকন", Icons.Default.Pets),
+        IconStyleOption("minimal", "Reference Minimal", "প্রো মিনিমাল আউটলাইন আইকন", Icons.Default.Extension)
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1206,6 +1259,7 @@ private fun ThemeIconsTabContent(
                             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
                             else MaterialTheme.colorScheme.surface
                         ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         border = BorderStroke(
                             width = if (isSelected) 1.5.dp else 1.dp,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
@@ -1222,7 +1276,23 @@ private fun ThemeIconsTabContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(style.emoji, fontSize = 24.sp)
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = style.icon,
+                                        contentDescription = null,
+                                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     Text(style.title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -1245,5 +1315,5 @@ private data class IconStyleOption(
     val id: String,
     val title: String,
     val description: String,
-    val emoji: String
+    val icon: ImageVector
 )

@@ -219,17 +219,44 @@ class KeyboardDataRepository(
     val recentLongTextLogs: Flow<List<LongTextLog>> = analyticsDao?.getAllTextLogs() ?: flowOf(emptyList())
 
 
+    private val letterCountsBuffer = java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>()
+    private var lastLetterFlushTime = System.currentTimeMillis()
+
     suspend fun recordLetterTyped(letter: String) {
         if (analyticsDao == null) return
         val cleanLetter = letter.trim()
         if (cleanLetter.isEmpty()) return
-        val existing = analyticsDao.findLetter(cleanLetter)
+        letterCountsBuffer.computeIfAbsent(cleanLetter) { java.util.concurrent.atomic.AtomicInteger(0) }.incrementAndGet()
         val now = System.currentTimeMillis()
-        if (existing != null) {
-            analyticsDao.incrementLetter(cleanLetter, now)
-        } else {
-            analyticsDao.insertLetterStat(LetterUsageStat(letter = cleanLetter, count = 1, lastUsed = now))
+        if (now - lastLetterFlushTime > 8000L || letterCountsBuffer.size > 20) {
+            flushLetterCounts()
         }
+    }
+
+    suspend fun flushLetterCounts() {
+        if (analyticsDao == null || letterCountsBuffer.isEmpty()) return
+        lastLetterFlushTime = System.currentTimeMillis()
+        val snapshot = HashMap<String, Int>()
+        for ((key, counter) in letterCountsBuffer) {
+            val count = counter.getAndSet(0)
+            if (count > 0) {
+                snapshot[key] = count
+            }
+        }
+        if (snapshot.isEmpty()) return
+        val now = System.currentTimeMillis()
+        try {
+            snapshot.forEach { (let, count) ->
+                val existing = analyticsDao.findLetter(let)
+                if (existing != null) {
+                    repeat(count) {
+                        analyticsDao.incrementLetter(let, now)
+                    }
+                } else {
+                    analyticsDao.insertLetterStat(LetterUsageStat(letter = let, count = count.toLong(), lastUsed = now))
+                }
+            }
+        } catch (ignored: Exception) {}
     }
 
     suspend fun recordWordTyped(word: String, locale: String) {

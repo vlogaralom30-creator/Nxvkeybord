@@ -83,17 +83,18 @@ fun ThemeLibraryScreen(
     var testInputText by remember { mutableStateOf("") }
     var testShiftState by remember { mutableStateOf(ShiftState.LOWERCASE) }
 
-    val categories = listOf("All", "Custom & DIY", "Ridmik & Bengali", "Featured & 3D", "Dark & AMOLED", "Light & Clean", "Aesthetic")
+    val categories = listOf("All", "Gaming & Featured", "Custom & DIY", "Ridmik & Bengali", "Featured & 3D", "Dark & AMOLED", "Light & Clean", "Aesthetic")
 
     val allThemes = KeyboardThemes.ALL_THEMES
     val filteredThemes = remember(selectedCategory) {
         when (selectedCategory) {
+            "Gaming & Featured" -> allThemes.filter { it.themeId in listOf("freefire_black_gold", "retro_mech", "rgb_neon", "cat_3d_slate") }
             "Custom & DIY" -> allThemes.filter { it.themeId in listOf("custom_diy", "custom") }
             "Ridmik & Bengali" -> allThemes.filter { it.themeId in listOf("ridmik_dark", "ridmik_probhat", "ridmik_classic", "ridmik_white") }
-            "Featured & 3D" -> allThemes.filter { it.themeId in listOf("nxv_enhanced", "reference_minimal", "retro_mech", "puppy_pop", "strawberry_dessert", "kawaii_kitten", "custom_diy") }
-            "Dark & AMOLED" -> allThemes.filter { it.themeId in listOf("ridmik_dark", "ridmik_probhat", "nxv_enhanced", "ridmik_classic", "retro_mech", "geometric", "amoled", "custom", "custom_diy") }
+            "Featured & 3D" -> allThemes.filter { it.themeId in listOf("freefire_black_gold", "nxv_enhanced", "reference_minimal", "retro_mech", "puppy_pop", "strawberry_dessert", "kawaii_kitten", "custom_diy") }
+            "Dark & AMOLED" -> allThemes.filter { it.themeId in listOf("freefire_black_gold", "ridmik_dark", "ridmik_probhat", "nxv_enhanced", "ridmik_classic", "retro_mech", "geometric", "amoled", "custom", "custom_diy") }
             "Light & Clean" -> allThemes.filter { it.themeId in listOf("ridmik_white", "reference_minimal", "puppy_pop", "light", "strawberry_dessert", "kawaii_kitten") }
-            "Aesthetic" -> allThemes.filter { it.themeId in listOf("nxv_enhanced", "ridmik_dark", "ridmik_probhat", "ridmik_classic", "reference_minimal", "retro_mech", "puppy_pop", "strawberry_dessert", "custom", "kawaii_kitten", "custom_diy") }
+            "Aesthetic" -> allThemes.filter { it.themeId in listOf("freefire_black_gold", "nxv_enhanced", "ridmik_dark", "ridmik_probhat", "ridmik_classic", "reference_minimal", "retro_mech", "puppy_pop", "strawberry_dessert", "custom", "kawaii_kitten", "custom_diy") }
             else -> allThemes
         }
     }
@@ -202,7 +203,12 @@ fun ThemeLibraryScreen(
                                         .background(MaterialTheme.colorScheme.secondary),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text("🎨", fontSize = 20.sp)
+                                    Icon(
+                                        imageVector = Icons.Default.Palette,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSecondary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
                                 }
                                 Column {
                                     Text(
@@ -544,7 +550,7 @@ fun ThemeCardItem(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -576,16 +582,23 @@ fun ThemeCardItem(
                         fontWeight = FontWeight.Bold
                     )
 
-                    if (palette.themeId in listOf("puppy_pop", "strawberry_dessert")) {
+                    if (palette.themeId in listOf("freefire_black_gold", "puppy_pop", "strawberry_dessert")) {
+                        val badgeBg = when (palette.themeId) {
+                            "freefire_black_gold" -> Color(0xFFFFD700)
+                            "puppy_pop" -> Color(0xFF1E88E5)
+                            else -> Color(0xFFE5395A)
+                        }
+                        val badgeTextCol = if (palette.themeId == "freefire_black_gold") Color(0xFF101216) else Color.White
+                        val badgeText = if (palette.themeId == "freefire_black_gold") "FREE FIRE" else "FEATURED"
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = if (palette.themeId == "puppy_pop") Color(0xFF1E88E5) else Color(0xFFE5395A)
+                            color = badgeBg
                         ) {
                             Text(
-                                text = "FEATURED",
-                                color = Color.White,
+                                text = badgeText,
+                                color = badgeTextCol,
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.Black,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
@@ -680,6 +693,7 @@ fun MiniKeyboardMockup(
     val isStrawberry = palette.specialIconStyle == ThemeSpecialIconStyle.STRAWBERRY_DESSERT
     val isPuppy = palette.specialIconStyle == ThemeSpecialIconStyle.PUPPY_MINIMAL
     val isRgbNeon = palette.specialIconStyle == ThemeSpecialIconStyle.RGB_NEON
+    val isFreeFire = palette.specialIconStyle == ThemeSpecialIconStyle.FREE_FIRE_BLACK_GOLD
 
     Box(
         modifier = modifier
@@ -688,6 +702,10 @@ fun MiniKeyboardMockup(
             .padding(6.dp),
         contentAlignment = Alignment.Center
     ) {
+        if (isFreeFire) {
+            com.example.theme.FreeFireBackgroundLayer(modifier = Modifier.fillMaxSize())
+        }
+
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.SpaceEvenly

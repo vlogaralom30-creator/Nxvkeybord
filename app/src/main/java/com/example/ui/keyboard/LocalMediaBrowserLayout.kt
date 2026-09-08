@@ -208,6 +208,37 @@ fun LocalMediaBrowserLayout(
                     )
                 }
 
+                // 0. Extract and Scan Built-in DemoMedia from assets or app directory
+                try {
+                    val demoTargetDir = File(context.filesDir, "DemoMedia").apply { mkdirs() }
+                    val assetList = context.assets.list("demo_media") ?: emptyArray()
+                    for (assetName in assetList) {
+                        val dest = File(demoTargetDir, assetName)
+                        if (!dest.exists() || dest.length() == 0L) {
+                            try {
+                                context.assets.open("demo_media/$assetName").use { input ->
+                                    dest.outputStream().use { output ->
+                                        input.copyTo(output)
+                                    }
+                                }
+                            } catch (_: Exception) {}
+                        }
+                        if (dest.exists() && dest.length() > 0L) {
+                            inspectAndAdd(dest, SocialPlatform.UNKNOWN)
+                        }
+                    }
+                    // Also scan any files inside DemoMedia folder
+                    demoTargetDir.listFiles()?.forEach { inspectAndAdd(it, SocialPlatform.UNKNOWN) }
+                } catch (_: Exception) {}
+
+                // Scan /DemoMedia directory if exists
+                try {
+                    val rootDemo = File("/DemoMedia")
+                    if (rootDemo.exists()) {
+                        rootDemo.listFiles()?.forEach { inspectAndAdd(it, SocialPlatform.UNKNOWN) }
+                    }
+                } catch (_: Exception) {}
+
                 // 1. Scan Public Downloads/TikTok
                 val publicDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                 if (publicDownloads != null && publicDownloads.exists()) {
@@ -218,6 +249,10 @@ fun LocalMediaBrowserLayout(
                     val fbFolder = File(publicDownloads, "Facebook")
                     if (fbFolder.exists()) {
                         fbFolder.listFiles()?.forEach { inspectAndAdd(it, SocialPlatform.FACEBOOK) }
+                    }
+                    val demoFolder = File(publicDownloads, "DemoMedia")
+                    if (demoFolder.exists()) {
+                        demoFolder.listFiles()?.forEach { inspectAndAdd(it, SocialPlatform.UNKNOWN) }
                     }
                     publicDownloads.listFiles()?.forEach {
                         if (it.isFile) inspectAndAdd(it)
@@ -237,6 +272,10 @@ fun LocalMediaBrowserLayout(
                     val fbSub = File(appDownloads, "Facebook")
                     if (fbSub.exists()) {
                         fbSub.listFiles()?.forEach { inspectAndAdd(it, SocialPlatform.FACEBOOK) }
+                    }
+                    val demoSub = File(appDownloads, "DemoMedia")
+                    if (demoSub.exists()) {
+                        demoSub.listFiles()?.forEach { inspectAndAdd(it, SocialPlatform.UNKNOWN) }
                     }
                 }
 

@@ -14,7 +14,8 @@ enum class KeyboardMode {
     NUMBER_PAD,
     VOICE,
     MEDIA,
-    WEB_VIDEO
+    WEB_VIDEO,
+    VIDEO_PLAYER
 }
 
 enum class OneHandedMode(val modeKey: String) {

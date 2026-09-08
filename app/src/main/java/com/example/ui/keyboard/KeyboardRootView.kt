@@ -44,11 +44,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.core.content.ContextCompat
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.collectAsState
 import android.content.Context
 import android.net.Uri
+import coil.compose.AsyncImage
 import com.example.downloader.tiktok.TikTokDownloadManager
 import com.example.downloader.tiktok.TikTokDownloadState
 import com.example.media.BackgroundMusicManager
@@ -71,8 +75,10 @@ import com.example.keyboard.ShiftState
 import com.example.language.bangla.BanglaLayouts
 import com.example.language.english.EnglishEngine
 import com.example.suggestion.SuggestionItem
+import com.example.theme.FreeFireBackgroundLayer
 import com.example.theme.KeyboardPalette
 import com.example.theme.KeyboardThemes
+import com.example.theme.ThemeSpecialIconStyle
 
 @Composable
 fun KeyboardRootView(
@@ -133,12 +139,132 @@ fun KeyboardRootView(
     onVoiceLiveInput: ((text: String, isFinal: Boolean) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    val palette = remember(settings.theme) {
-        KeyboardThemes.getPalette(settings.theme)
+    val basePalette = remember(
+        settings.theme,
+        settings.customThemeEnabled,
+        settings.customKeyboardBgColor,
+        settings.customKeyBgColor,
+        settings.customTextColor,
+        settings.customAccentColor,
+        settings.customSuggestionBgColor,
+        settings.customKeyBorderColor,
+        settings.keyElevationDp,
+        settings.customBackgroundImageUri,
+        settings.customBackgroundDim,
+        settings.customBackgroundBlur,
+        settings.customThemeIconStyle
+    ) {
+        if (settings.customThemeEnabled) {
+            KeyboardThemes.getPalette("custom_diy", settings)
+        } else {
+            KeyboardThemes.getPalette(settings.theme, settings)
+        }
     }
 
     val context = LocalContext.current
     val view = LocalView.current
+
+    // Video Overlay Background Manager State
+    val videoOverlayManager = remember { KeyboardVideoOverlayManager.getInstance(context) }
+    val isVideoOverlayEnabled by videoOverlayManager.isOverlayEnabled.collectAsState()
+    val activeVideoUri by videoOverlayManager.activeVideoUri.collectAsState()
+    val isVideoOverlayPlaying by videoOverlayManager.isPlaying.collectAsState()
+    val videoOverlayOpacity by videoOverlayManager.videoOpacity.collectAsState()
+    val videoKeyTransparency by videoOverlayManager.keyTransparency.collectAsState()
+    val videoDimOverlay by videoOverlayManager.dimOverlay.collectAsState()
+    val isVideoOverlayMuted by videoOverlayManager.isMuted.collectAsState()
+    val activeVideoOverlayTitle by videoOverlayManager.activeVideoTitle.collectAsState()
+    val videoVolume by videoOverlayManager.volume.collectAsState()
+    val videoSeekToMs by videoOverlayManager.seekToMs.collectAsState()
+    val isTransparentKeyMode by videoOverlayManager.transparentKeyMode.collectAsState()
+    val isVideoTypingMode by videoOverlayManager.isVideoTypingMode.collectAsState()
+    var showVideoOverlayDialog by remember { mutableStateOf(false) }
+
+    // Dynamic transparent key mode for "video+typing" mode (letters float over video without button backgrounds)
+    val palette = remember(basePalette, isTransparentKeyMode, isVideoTypingMode) {
+        if (isTransparentKeyMode || isVideoTypingMode) {
+            basePalette.copy(
+                keyBackground = Color.Transparent,
+                keyActionBackground = Color.Transparent,
+                keyBorderColor = Color.Transparent,
+                keyBorderWidth = 0.dp,
+                keyElevation = 0.dp,
+                pressedElevation = 0.dp,
+                textColor = Color.White,
+                secondaryTextColor = Color.White.copy(alpha = 0.75f),
+                accentColor = Color.White,
+                suggestionBarBackground = Color.Black.copy(alpha = 0.45f),
+                keyboardBackground = Color.Transparent,
+                specialIconStyle = com.example.theme.ThemeSpecialIconStyle.STANDARD
+            )
+        } else {
+            basePalette
+        }
+    }
+
+    // Command parser buffer for video shortcuts (Pe+space=pause, Pl+space=play, Vl+XX=volume, Cl+space=close)
+    var recentCommandLetters by remember { mutableStateOf("") }
+
+    val handleCharTypedWithCommand: (String) -> Unit = { char ->
+        recentCommandLetters = (recentCommandLetters + char).takeLast(10)
+        onCharTyped(char)
+    }
+
+    val handleDeleteWithCommand: () -> Unit = {
+        if (recentCommandLetters.isNotEmpty()) {
+            recentCommandLetters = recentCommandLetters.dropLast(1)
+        }
+        onDelete()
+    }
+
+    fun handleSpaceWithCommand() {
+        val cmd = recentCommandLetters.trim().lowercase()
+        val isVideoActive = (isVideoOverlayEnabled && activeVideoUri != null) || isVideoTypingMode
+
+        if (isVideoActive && cmd.isNotEmpty()) {
+            when {
+                // Pause command: Pe+speach / pe
+                cmd == "pe" || cmd == "pe+" -> {
+                    videoOverlayManager.setPlaying(false)
+                    repeat(recentCommandLetters.length) { onDelete() }
+                    recentCommandLetters = ""
+                    return
+                }
+                // Play command: Pl+speach / pl
+                cmd == "pl" || cmd == "pl+" -> {
+                    videoOverlayManager.setPlaying(true)
+                    repeat(recentCommandLetters.length) { onDelete() }
+                    recentCommandLetters = ""
+                    return
+                }
+                // Close command: Cl+speach / cl
+                cmd == "cl" || cmd == "cl+" -> {
+                    videoOverlayManager.clearOverlay()
+                    videoOverlayManager.setVideoTypingMode(false)
+                    videoOverlayManager.setTransparentKeyMode(false)
+                    repeat(recentCommandLetters.length) { onDelete() }
+                    recentCommandLetters = ""
+                    return
+                }
+                // Volume command: Vl+28, Vl50, Vl100, etc.
+                cmd.startsWith("vl") -> {
+                    val numPart = cmd.removePrefix("vl").removePrefix("+")
+                    val volumeVal = numPart.toFloatOrNull()
+                    if (volumeVal != null) {
+                        val normalized = (volumeVal / 100f).coerceIn(0f, 1f)
+                        videoOverlayManager.setVolume(normalized)
+                        repeat(recentCommandLetters.length) { onDelete() }
+                        recentCommandLetters = ""
+                        return
+                    }
+                }
+            }
+        }
+        // Not a video command: normal space
+        recentCommandLetters = ""
+        onSpace()
+    }
+
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showLanguageSlider by remember { mutableStateOf(false) }
     var showThemeGridPicker by remember { mutableStateOf(false) }
@@ -157,18 +283,6 @@ fun KeyboardRootView(
     val isMediaPlaying by musicManager.isPlaying.collectAsState()
     val mediaCurrentPosMs by musicManager.currentPositionMs.collectAsState()
     val mediaDurationMs by musicManager.durationMs.collectAsState()
-
-    // Video Overlay Background Manager State
-    val videoOverlayManager = remember { KeyboardVideoOverlayManager.getInstance(context) }
-    val isVideoOverlayEnabled by videoOverlayManager.isOverlayEnabled.collectAsState()
-    val activeVideoUri by videoOverlayManager.activeVideoUri.collectAsState()
-    val isVideoOverlayPlaying by videoOverlayManager.isPlaying.collectAsState()
-    val videoOverlayOpacity by videoOverlayManager.videoOpacity.collectAsState()
-    val videoKeyTransparency by videoOverlayManager.keyTransparency.collectAsState()
-    val videoDimOverlay by videoOverlayManager.dimOverlay.collectAsState()
-    val isVideoOverlayMuted by videoOverlayManager.isMuted.collectAsState()
-    val activeVideoOverlayTitle by videoOverlayManager.activeVideoTitle.collectAsState()
-    var showVideoOverlayDialog by remember { mutableStateOf(false) }
 
     // In-Keyboard Web / URL Video Viewer state
     var activeWebVideoUrl by remember { mutableStateOf<String?>(null) }
@@ -359,12 +473,37 @@ fun KeyboardRootView(
                 else palette.keyboardBackground
             )
     ) {
+        // Free Fire Black Gold Battle Royale Theme Background
+        if (!isVideoOverlayEnabled && !(settings.customThemeEnabled && settings.customBackgroundImageUri.isNotBlank()) &&
+            palette.specialIconStyle == ThemeSpecialIconStyle.FREE_FIRE_BLACK_GOLD) {
+            FreeFireBackgroundLayer(modifier = Modifier.matchParentSize())
+        }
+
+        // Custom photo background overlay (if enabled and photo is chosen)
+        if (!isVideoOverlayEnabled && settings.customThemeEnabled && settings.customBackgroundImageUri.isNotBlank()) {
+            AsyncImage(
+                model = Uri.parse(settings.customBackgroundImageUri),
+                contentDescription = "Custom Background Photo",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .matchParentSize()
+                    .then(
+                        if (settings.customBackgroundBlur > 0) {
+                            Modifier.blur(settings.customBackgroundBlur.dp)
+                        } else Modifier
+                    ),
+                alpha = (1f - settings.customBackgroundDim).coerceIn(0.05f, 1f)
+            )
+        }
+
         // Video overlay hardware-accelerated background (plays video behind the keyboard keys)
         if (isVideoOverlayEnabled && activeVideoUri != null) {
             KeyboardVideoOverlayBackground(
                 videoUri = activeVideoUri!!,
                 isPlaying = isVideoOverlayPlaying,
                 isMuted = isVideoOverlayMuted,
+                volume = videoVolume,
+                seekToMs = videoSeekToMs,
                 videoOpacity = videoOverlayOpacity,
                 dimOverlay = videoDimOverlay,
                 onPositionChanged = { pos, dur ->
@@ -725,17 +864,25 @@ fun KeyboardRootView(
                                             tikTokManager.onClipboardUpdated(clip)
                                         }
                                     },
-                                    activeMediaTitle = activeMediaTitle,
-                                    isMediaPlaying = isMediaPlaying,
+                                    activeMediaTitle = activeMediaTitle.ifBlank { activeVideoOverlayTitle },
+                                    isMediaPlaying = isMediaPlaying || isVideoOverlayPlaying,
                                     mediaCurrentPosMs = mediaCurrentPosMs,
                                     mediaDurationMs = mediaDurationMs,
                                     onMediaClick = {
                                         playFeedback()
-                                        onModeSwitch(KeyboardMode.MEDIA)
+                                        if (activeVideoOverlayTitle.isNotBlank()) {
+                                            onModeSwitch(KeyboardMode.VIDEO_PLAYER)
+                                        } else {
+                                            onModeSwitch(KeyboardMode.MEDIA)
+                                        }
                                     },
                                     onMediaTogglePlayPause = {
                                         playFeedback()
-                                        musicManager.togglePlayPause()
+                                        if (activeVideoOverlayTitle.isNotBlank()) {
+                                            videoOverlayManager.togglePlayPause()
+                                        } else {
+                                            musicManager.togglePlayPause()
+                                        }
                                     },
                                     onMediaOpenBrowser = {
                                         playFeedback()
@@ -744,8 +891,9 @@ fun KeyboardRootView(
                                     onMediaClosePlayer = {
                                         playFeedback()
                                         musicManager.stop()
+                                        videoOverlayManager.clearOverlay()
                                     },
-                                    isVideoOverlayActive = isVideoOverlayEnabled,
+                                    isVideoOverlayActive = isVideoOverlayEnabled && activeVideoUri != null,
                                     isVideoPlaying = isVideoOverlayPlaying,
                                     onToggleVideoPlayPause = {
                                         playFeedback()
@@ -753,7 +901,7 @@ fun KeyboardRootView(
                                     },
                                     onOpenVideoOverlaySettings = {
                                         playFeedback()
-                                        showVideoOverlayDialog = true
+                                        onModeSwitch(KeyboardMode.VIDEO_PLAYER)
                                     }
                                 )
                             }
@@ -781,6 +929,7 @@ fun KeyboardRootView(
                         } else {
                             when (currentMode) {
                             KeyboardMode.MEDIA,
+                            KeyboardMode.VIDEO_PLAYER,
                             KeyboardMode.EMOJI,
                             KeyboardMode.STICKERS,
                             KeyboardMode.CLIPBOARD,
@@ -1507,6 +1656,29 @@ private fun UtilityModesContent(
     }
 
     when (currentMode) {
+        KeyboardMode.VIDEO_PLAYER -> {
+            KeyboardVideoPlayerLayout(
+                overlayManager = videoOverlayManager,
+                palette = palette,
+                onStartTypingOverVideo = {
+                    playFeedback()
+                    videoOverlayManager.setVideoTypingMode(true)
+                    returnToTextMode()
+                },
+                onSwitchToAudioMode = { filePath, title ->
+                    playFeedback()
+                    videoOverlayManager.clearOverlay()
+                    musicManager.playMedia(filePath, true, title)
+                    returnToTextMode()
+                },
+                onCloseVideo = {
+                    playFeedback()
+                    videoOverlayManager.clearOverlay()
+                    returnToTextMode()
+                }
+            )
+        }
+
         KeyboardMode.MEDIA -> {
             LocalMediaBrowserLayout(
                 palette = palette,
@@ -1516,11 +1688,22 @@ private fun UtilityModesContent(
                 },
                 onPlayMedia = { filePath, isAudio, title ->
                     playFeedback()
-                    musicManager.playMedia(filePath, isAudio, title)
+                    if (!isAudio) {
+                        val file = java.io.File(filePath)
+                        val uri = if (file.exists()) android.net.Uri.fromFile(file) else android.net.Uri.parse(filePath)
+                        videoOverlayManager.setVideoSource(uri, title)
+                        onModeSwitch(KeyboardMode.VIDEO_PLAYER)
+                    } else {
+                        musicManager.playMedia(filePath, true, title)
+                    }
                 },
                 onSetVideoOverlay = { filePath, title ->
                     playFeedback()
-                    videoOverlayManager.setVideoSource(android.net.Uri.parse(filePath), title)
+                    val file = java.io.File(filePath)
+                    val uri = if (file.exists()) android.net.Uri.fromFile(file) else android.net.Uri.parse(filePath)
+                    videoOverlayManager.setVideoSource(uri, title)
+                    videoOverlayManager.setVideoTypingMode(true)
+                    videoOverlayManager.setTransparentKeyMode(true)
                     returnToTextMode()
                 },
                 onPasteText = { text ->
