@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.Edit
@@ -145,6 +146,7 @@ fun SuggestionStrip(
     onMediaTogglePlayPause: () -> Unit = {},
     onMediaOpenBrowser: () -> Unit = {},
     onMediaClosePlayer: () -> Unit = {},
+    onOpenDesktopBrowser: () -> Unit = {},
     isVideoOverlayActive: Boolean = false,
     isVideoPlaying: Boolean = false,
     onToggleVideoPlayPause: () -> Unit = {},
@@ -530,7 +532,7 @@ fun SuggestionStrip(
 
             // 2. Middle Layer: Dedicated Action Bar when expanded
             val defaultOrder = listOf(
-                "voice", "clipboard", "tiktok", "stickers", "media", "video_overlay",
+                "browser", "voice", "clipboard", "tiktok", "stickers", "media", "video_overlay",
                 "text_edit", "numpad", "vault", "themes", "language", "vibration",
                 "sound", "one_handed", "settings"
             )
@@ -576,6 +578,15 @@ fun SuggestionStrip(
                         for (shortcutId in effectiveOrder) {
                             if (isEnabled(shortcutId)) {
                                 when (shortcutId) {
+                                    "browser" -> {
+                                        ActionToolChip(
+                                            icon = Icons.Default.Computer,
+                                            label = "PC Browser",
+                                            palette = palette,
+                                            tag = "toolbar_desktop_browser",
+                                            onClick = onOpenDesktopBrowser
+                                        )
+                                    }
                                     "voice" -> {
                                         ActionToolChip(
                                             icon = Icons.Default.Mic,

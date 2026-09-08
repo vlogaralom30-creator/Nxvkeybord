@@ -34,6 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
@@ -747,12 +748,12 @@ fun ClipboardKeyboardLayout(
                                             horizontalArrangement = Arrangement.spacedBy(3.dp)
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.PlayArrow,
+                                                imageVector = Icons.Default.Computer,
                                                 contentDescription = null,
                                                 tint = Color.White,
                                                 modifier = Modifier.size(12.dp)
                                             )
-                                            Text("Play Video", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                            Text("Open PC Browser", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
@@ -1185,13 +1186,13 @@ fun ClipboardKeyboardLayout(
                                                 horizontalArrangement = Arrangement.spacedBy(2.dp)
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.PlayArrow,
+                                                    imageVector = Icons.Default.Computer,
                                                     contentDescription = null,
                                                     tint = Color.White,
                                                     modifier = Modifier.size(11.dp)
                                                 )
                                                 Text(
-                                                    text = "Play",
+                                                    text = "PC Browser",
                                                     color = Color.White,
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold

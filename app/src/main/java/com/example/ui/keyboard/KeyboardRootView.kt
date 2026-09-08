@@ -893,6 +893,16 @@ fun KeyboardRootView(
                                         musicManager.stop()
                                         videoOverlayManager.clearOverlay()
                                     },
+                                    onOpenDesktopBrowser = {
+                                        playFeedback()
+                                        val latest = clipboardItems.firstOrNull()?.text?.trim() ?: ""
+                                        if (latest.startsWith("http://", ignoreCase = true) || latest.startsWith("https://", ignoreCase = true) || (latest.contains(".") && !latest.contains(" "))) {
+                                            activeWebVideoUrl = latest
+                                        } else if (activeWebVideoUrl.isNullOrBlank()) {
+                                            activeWebVideoUrl = "https://www.google.com"
+                                        }
+                                        onModeSwitch(KeyboardMode.WEB_VIDEO)
+                                    },
                                     isVideoOverlayActive = isVideoOverlayEnabled && activeVideoUri != null,
                                     isVideoPlaying = isVideoOverlayPlaying,
                                     onToggleVideoPlayPause = {
