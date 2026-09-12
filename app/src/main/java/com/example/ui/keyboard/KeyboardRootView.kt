@@ -181,8 +181,9 @@ fun KeyboardRootView(
     var showVideoOverlayDialog by remember { mutableStateOf(false) }
 
     // Dynamic transparent key mode for "video+typing" mode (letters float over video without button backgrounds)
-    val palette = remember(basePalette, isTransparentKeyMode, isVideoTypingMode) {
-        if (isTransparentKeyMode || isVideoTypingMode) {
+    val palette = remember(basePalette, isTransparentKeyMode, isVideoTypingMode, isVideoOverlayEnabled, activeVideoUri) {
+        val isVideoActive = isVideoOverlayEnabled && activeVideoUri != null
+        if (isVideoActive && (isTransparentKeyMode || isVideoTypingMode)) {
             basePalette.copy(
                 keyBackground = Color.Transparent,
                 keyActionBackground = Color.Transparent,

@@ -216,7 +216,7 @@ fun KeyboardKeyView(
                 var isDragging = false
                 var isLongPressed = false
                 val touchSlop = viewConfiguration.touchSlop
-                val longPressTimeout = 320L
+                val longPressTimeout = 400L // Standard Android long press delay
 
                 val longPressJob = if (onLongPress != null) {
                     coroutineScope.launch {
@@ -234,7 +234,12 @@ fun KeyboardKeyView(
                     if (!change.pressed) {
                         longPressJob?.cancel()
                         if (!isDragging && !isLongPressed) {
-                            onTap()
+                            val bounds = androidx.compose.ui.geometry.Rect(
+                                0f, 0f, size.width.toFloat(), size.height.toFloat()
+                            )
+                            if (bounds.contains(change.position)) {
+                                onTap()
+                            }
                         }
                         break
                     }
@@ -260,13 +265,14 @@ fun KeyboardKeyView(
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false)
                 isPressed = true
-                onTap() // Immediate 0.00s deletion on touch down!
+                onTap() // Immediate deletion on touch down
 
+                var isHolding = true
                 val repeatJob = coroutineScope.launch {
-                    delay(300L) // initial hold delay before repeating
+                    delay(350L) // initial hold delay before repeating
                     var currentDelay = 55L
                     var holdDuration = 0L
-                    while (isActive) {
+                    while (isActive && isHolding) {
                         onTap()
                         delay(currentDelay)
                         holdDuration += currentDelay
@@ -282,55 +288,86 @@ fun KeyboardKeyView(
                     val event = awaitPointerEvent()
                     val change = event.changes.firstOrNull { it.id == down.id } ?: break
                     if (!change.pressed) {
+                        isHolding = false
                         repeatJob.cancel()
                         break
+                    }
+                    
+                    // Cancel repeat if finger slides completely out of bounds
+                    val outOfBoundsMargin = viewConfiguration.touchSlop * 2f
+                    val bounds = androidx.compose.ui.geometry.Rect(
+                        -outOfBoundsMargin, -outOfBoundsMargin, 
+                        size.width.toFloat() + outOfBoundsMargin, size.height.toFloat() + outOfBoundsMargin
+                    )
+                    if (!bounds.contains(change.position)) {
+                        isHolding = false
+                        repeatJob.cancel()
+                        isPressed = false 
                     }
                 }
                 isPressed = false
             }
         }
     } else {
-        // High-Speed Instant Zero-Latency Typing (0.01s / Instantaneous on DOWN):
-        // All alphabetic, Bangla, numeric, punctuation, symbol, enter, and shift keys trigger instantly on DOWN!
+        // Normal, smooth typing logic mimicking standard keyboards (Gboard/Ridmik)
         Modifier.pointerInput(label, isAlphabeticKey, onLongPress) {
             awaitEachGesture {
                 // Multi-touch safe: requireUnconsumed = false ensures rapid typing with 2 thumbs never misses a key!
                 val down = awaitFirstDown(requireUnconsumed = false)
                 isPressed = true
 
-                // Letters, Bangla characters, and keys without special hold menus trigger IMMEDIATELY on touch down!
-                val shouldTriggerOnDown = isAlphabeticKey || onLongPress == null
-                var didTriggerOnDown = false
-
-                if (shouldTriggerOnDown) {
-                    onTap()
-                    didTriggerOnDown = true
-                }
-
                 var isLongPressed = false
+                var isDragging = false
+                val touchSlop = viewConfiguration.touchSlop
+                val longPressTimeout = 400L // Standard Android long press delay
+
                 val longPressJob = if (onLongPress != null) {
                     coroutineScope.launch {
-                        delay(320L)
-                        isLongPressed = true
-                        // If character was already typed on down, delete it first so the alternate hint replaces it cleanly
-                        if (didTriggerOnDown && onDelete != null) {
-                            onDelete.invoke()
+                        delay(longPressTimeout)
+                        if (!isDragging) {
+                            isLongPressed = true
+                            onLongPress.invoke()
                         }
-                        onLongPress.invoke()
                     }
                 } else null
 
-                // Continuous pointer tracking: NEVER break on change.isConsumed so multi-touch never cancels the key!
                 while (true) {
                     val event = awaitPointerEvent()
                     val change = event.changes.firstOrNull { it.id == down.id } ?: break
+
                     if (!change.pressed) {
                         longPressJob?.cancel()
-                        // If not triggered on down (e.g. language key with picker) and not long-pressed, trigger on tap
-                        if (!didTriggerOnDown && !isLongPressed) {
-                            onTap()
+                        if (!isDragging && !isLongPressed) {
+                            // Check if finger is still within bounds before triggering tap
+                            val bounds = androidx.compose.ui.geometry.Rect(
+                                0f, 0f, size.width.toFloat(), size.height.toFloat()
+                            )
+                            if (bounds.contains(change.position)) {
+                                onTap()
+                            }
                         }
                         break
+                    }
+
+                    // Cancel long press if the user drags their finger too far (slop)
+                    val dx = change.position.x - down.position.x
+                    val dy = change.position.y - down.position.y
+                    val distSquared = dx * dx + dy * dy
+                    if (!isDragging && distSquared > touchSlop * touchSlop) {
+                        isDragging = true
+                        longPressJob?.cancel()
+                    }
+
+                    // Cancel long press and remove visual highlight if finger slides completely out of bounds
+                    val outOfBoundsMargin = touchSlop * 2f
+                    val bounds = androidx.compose.ui.geometry.Rect(
+                        -outOfBoundsMargin, -outOfBoundsMargin, 
+                        size.width.toFloat() + outOfBoundsMargin, size.height.toFloat() + outOfBoundsMargin
+                    )
+                    if (!bounds.contains(change.position)) {
+                        longPressJob?.cancel()
+                        isDragging = true
+                        isPressed = false 
                     }
                 }
                 isPressed = false

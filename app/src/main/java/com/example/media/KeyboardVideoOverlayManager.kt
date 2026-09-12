@@ -45,7 +45,7 @@ class KeyboardVideoOverlayManager private constructor(private val appContext: Co
     val seekToMs: StateFlow<Int?> = _seekToMs.asStateFlow()
 
     // When true, keys are rendered transparent floating text directly over video
-    private val _transparentKeyMode = MutableStateFlow(prefs.getBoolean("transparent_keys", true))
+    private val _transparentKeyMode = MutableStateFlow(prefs.getBoolean("transparent_keys", false))
     val transparentKeyMode: StateFlow<Boolean> = _transparentKeyMode.asStateFlow()
 
     // When true, keyboard is in typing mode over video; when false, keyboard shows full video controls

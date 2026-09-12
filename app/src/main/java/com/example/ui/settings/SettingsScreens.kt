@@ -426,13 +426,13 @@ fun SettingsHomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Card 1: Themes & Colors
+                // Card 1: Themes & Studio
                 QuickDashboardCard(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.Palette,
                     iconBg = Color(0xFF0A84FF),
-                    title = "থিম ও কালার",
-                    subtitle = "১৬+ স্টাইল ও রিদমিক",
+                    title = "থিম ও স্টুডিও",
+                    subtitle = "১৮+ থিম, ফটো ও কালার",
                     tag = "quick_theme_btn",
                     onClick = { onNavigate(SettingsScreen.THEME_LIBRARY) }
                 )
@@ -453,13 +453,13 @@ fun SettingsHomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Card 3: Keys & Popups
+                // Card 3: Size & Keys
                 QuickDashboardCard(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.Tune,
                     iconBg = Color(0xFFF59E0B),
-                    title = "বাটন ও লেআউট",
-                    subtitle = "ইমোজি, রো ও পপআপ",
+                    title = "সাইজ ও বাটন",
+                    subtitle = "উচ্চতা, রো ও পপআপ",
                     tag = "quick_keys_btn",
                     onClick = { onNavigate(SettingsScreen.CUSTOMIZE_KEYS) }
                 )
@@ -488,9 +488,9 @@ fun SettingsHomeScreen(
             SettingsCategoryHeader("কিবোর্ড কনফিগারেশন (KEYBOARD)")
             SettingsTile(
                 icon = Icons.Default.Palette,
-                title = "Custom Theme & Layout Studio (কাস্টম থিম স্টুডিও)",
-                subtitle = "নিজের ফটো আপলোড, বাটন কালার, ফন্ট কালার, সাইজ % ও শর্টকাট বাটন সাজান",
-                onClick = { onNavigate(SettingsScreen.CUSTOM_THEME_STUDIO) },
+                title = "Theme & Layout Studio (থিম ও লেআউট স্টুডিও)",
+                subtitle = "১৮+ রেডিমেড থিম, ফটো ব্যাকগ্রাউন্ড, কালার, সাইজ ও বাটন কাস্টমাইজেশন",
+                onClick = { onNavigate(SettingsScreen.THEME_LIBRARY) },
                 tag = "tile_theme_studio"
             )
             SettingsTile(
@@ -499,20 +499,6 @@ fun SettingsHomeScreen(
                 subtitle = "English, বাংলা, Avro phonetic typing",
                 onClick = { onNavigate(SettingsScreen.KEYBOARD_PREFS) },
                 tag = "tile_keyboard"
-            )
-            SettingsTile(
-                icon = Icons.Default.Tune,
-                title = "Layout, Buttons & Popups (কাস্টমাইজেশন)",
-                subtitle = "Toggle Emoji / Lang buttons, key hints, popup modes",
-                onClick = { onNavigate(SettingsScreen.CUSTOMIZE_KEYS) },
-                tag = "tile_customize_keys"
-            )
-            SettingsTile(
-                icon = Icons.Default.Palette,
-                title = "Theme Library & Styling (থিম গ্যালারি)",
-                subtitle = "Classic Ridmik, NXV Modern, AMOLED, Retro, Puppy Pop",
-                onClick = { onNavigate(SettingsScreen.THEME_LIBRARY) },
-                tag = "tile_theme"
             )
 
             // Typing Group

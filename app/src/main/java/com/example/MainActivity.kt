@@ -32,9 +32,7 @@ import com.example.data.preferences.KeyboardSettings
 import com.example.ui.settings.AboutScreen
 import com.example.ui.settings.BackupRestoreScreen
 import com.example.ui.settings.ClipboardPrefsScreen
-import com.example.ui.settings.CustomThemeStudioScreen
 import com.example.ui.settings.DictionaryScreen
-import com.example.ui.settings.KeyboardCustomizeScreen
 import com.example.ui.settings.KeyboardPrefsScreen
 import com.example.ui.settings.OnboardingView
 import com.example.ui.settings.PrivacyScreen
@@ -43,7 +41,7 @@ import com.example.ui.settings.SettingsScreen
 import com.example.ui.settings.ShortcutsScreen
 import com.example.ui.settings.SoundHapticScreen
 import com.example.ui.settings.SystemDiagnosticsScreen
-import com.example.ui.settings.ThemeLibraryScreen
+import com.example.ui.settings.ThemeAndLayoutStudioScreen
 import com.example.ui.settings.TypingAnalyticsScreen
 import com.example.ui.settings.TypingPrefsScreen
 import com.example.ui.settings.VaultPrefsScreen
@@ -151,26 +149,26 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            SettingsScreen.THEME_LIBRARY -> {
-                                ThemeLibraryScreen(
-                                    currentThemeId = settings.theme,
-                                    currentUiMode = settings.uiMode,
+                            SettingsScreen.THEME_LIBRARY,
+                            SettingsScreen.CUSTOM_THEME_STUDIO,
+                            SettingsScreen.CUSTOMIZE_KEYS -> {
+                                val initialTab = when (screen) {
+                                    SettingsScreen.CUSTOM_THEME_STUDIO -> 1
+                                    SettingsScreen.CUSTOMIZE_KEYS -> 3
+                                    else -> 0
+                                }
+                                ThemeAndLayoutStudioScreen(
+                                    initialTab = initialTab,
+                                    settings = settings,
                                     onSelectTheme = { themeId ->
-                                        scope.launch { app.preferences.updateTheme(themeId) }
+                                        scope.launch {
+                                            app.preferences.updateTheme(themeId)
+                                            app.preferences.updateCustomThemeEnabled(false)
+                                        }
                                     },
                                     onUpdateUiMode = { mode ->
                                         scope.launch { app.preferences.updateUiMode(mode) }
                                     },
-                                    onNavigateToThemeStudio = {
-                                        currentScreen = SettingsScreen.CUSTOM_THEME_STUDIO
-                                    },
-                                    onBack = { currentScreen = SettingsScreen.HOME }
-                                )
-                            }
-
-                            SettingsScreen.CUSTOM_THEME_STUDIO -> {
-                                CustomThemeStudioScreen(
-                                    settings = settings,
                                     onUpdateCustomThemeEnabled = { enabled ->
                                         scope.launch { app.preferences.updateCustomThemeEnabled(enabled) }
                                     },
@@ -204,9 +202,6 @@ class MainActivity : ComponentActivity() {
                                     onUpdateCustomBackgroundBlur = { blur ->
                                         scope.launch { app.preferences.updateCustomBackgroundBlur(blur) }
                                     },
-                                    onUpdateCustomIconStyle = { style ->
-                                        scope.launch { app.preferences.updateCustomIconStyle(style) }
-                                    },
                                     onUpdateCustomKeyBorderWidthDp = { width ->
                                         scope.launch { app.preferences.updateCustomKeyBorderWidthDp(width) }
                                     },
@@ -216,47 +211,26 @@ class MainActivity : ComponentActivity() {
                                     onUpdateKeyElevationDp = { elev ->
                                         scope.launch { app.preferences.updateKeyElevationDp(elev) }
                                     },
-                                    onUpdateKeyboardHeightRatio = { h ->
-                                        scope.launch { app.preferences.updateKeyboardHeightRatio(h) }
-                                    },
-                                    onUpdateKeyboardWidthRatio = { w ->
-                                        scope.launch { app.preferences.updateKeyboardWidthRatio(w) }
-                                    },
                                     onUpdateKeyCornerRadiusDp = { r ->
                                         scope.launch { app.preferences.updateKeyCornerRadiusDp(r) }
                                     },
-                                    onUpdateKeyVerticalGapDp = { g ->
-                                        scope.launch { app.preferences.updateKeyVerticalGapDp(g) }
+                                    onUpdateKeyboardHeightRatio = { h ->
+                                        scope.launch { app.preferences.updateKeyboardHeightRatio(h) }
                                     },
-                                    onUpdateKeyHorizontalGapDp = { g ->
-                                        scope.launch { app.preferences.updateKeyHorizontalGapDp(g) }
+                                    onUpdateShowNumberRow = { enabled ->
+                                        scope.launch { app.preferences.updateShowNumberRow(enabled) }
                                     },
-                                    onUpdateKeyboardSideMarginDp = { m ->
-                                        scope.launch { app.preferences.updateKeyboardSideMarginDp(m) }
+                                    onUpdateShowEmojiKey = { show ->
+                                        scope.launch { app.preferences.updateShowEmojiKey(show) }
                                     },
-                                    onUpdateKeyboardBottomMarginDp = { m ->
-                                        scope.launch { app.preferences.updateKeyboardBottomMarginDp(m) }
+                                    onUpdateShowLanguageKey = { show ->
+                                        scope.launch { app.preferences.updateShowLanguageKey(show) }
                                     },
-                                    onUpdateKeyFontSizeRatio = { s ->
-                                        scope.launch { app.preferences.updateKeyFontSizeRatio(s) }
+                                    onUpdateShowKeySubLabels = { show ->
+                                        scope.launch { app.preferences.updateShowKeySubLabels(show) }
                                     },
-                                    onUpdateEnabledShortcuts = { shortcuts ->
-                                        scope.launch { app.preferences.updateEnabledShortcuts(shortcuts) }
-                                    },
-                                    onUpdateShortcutOrder = { order ->
-                                        scope.launch { app.preferences.updateShortcutOrder(order) }
-                                    },
-                                    onUpdateShowSuggestionMic = { show ->
-                                        scope.launch { app.preferences.updateShowSuggestionMic(show) }
-                                    },
-                                    onUpdateShowSuggestionVideo = { show ->
-                                        scope.launch { app.preferences.updateShowSuggestionVideo(show) }
-                                    },
-                                    onUpdateShowQuickPaste = { show ->
-                                        scope.launch { app.preferences.updateShowQuickPaste(show) }
-                                    },
-                                    onUpdateToolbarPosition = { pos ->
-                                        scope.launch { app.preferences.updateToolbarPosition(pos) }
+                                    onUpdateKeyPopupMode = { mode ->
+                                        scope.launch { app.preferences.updateKeyPopupMode(mode) }
                                     },
                                     onBack = { currentScreen = SettingsScreen.HOME }
                                 )
@@ -294,37 +268,6 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onUpdateOneHandedShowSuggestions = { show ->
                                         scope.launch { app.preferences.updateOneHandedShowSuggestions(show) }
-                                    },
-                                    onBack = { currentScreen = SettingsScreen.HOME }
-                                )
-                            }
-
-                            SettingsScreen.CUSTOMIZE_KEYS -> {
-                                KeyboardCustomizeScreen(
-                                    settings = settings,
-                                    onUpdateShowEmojiKey = { show ->
-                                        scope.launch { app.preferences.updateShowEmojiKey(show) }
-                                    },
-                                    onUpdateShowLanguageKey = { show ->
-                                        scope.launch { app.preferences.updateShowLanguageKey(show) }
-                                    },
-                                    onUpdateShowKeySubLabels = { show ->
-                                        scope.launch { app.preferences.updateShowKeySubLabels(show) }
-                                    },
-                                    onUpdateKeyPopupMode = { mode ->
-                                        scope.launch { app.preferences.updateKeyPopupMode(mode) }
-                                    },
-                                    onUpdateShowNumberRow = { enabled ->
-                                        scope.launch { app.preferences.updateShowNumberRow(enabled) }
-                                    },
-                                    onUpdateHeightRatio = { height ->
-                                        scope.launch { app.preferences.updateKeyboardHeightRatio(height) }
-                                    },
-                                    onUpdateWidthRatio = { width ->
-                                        scope.launch { app.preferences.updateKeyboardWidthRatio(width) }
-                                    },
-                                    onNavigateToThemeStudio = {
-                                        currentScreen = SettingsScreen.CUSTOM_THEME_STUDIO
                                     },
                                     onBack = { currentScreen = SettingsScreen.HOME }
                                 )
