@@ -47,10 +47,6 @@ data class SavedCredential(
     val username: String,
     val password: String,
     val packageName: String = "",
-    val siteUrl: String = "",
-    val appName: String = "",
-    val category: String = "General",
-    val notes: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val isPinned: Boolean = false
 )

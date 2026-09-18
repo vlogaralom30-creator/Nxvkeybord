@@ -93,14 +93,10 @@ class KeyboardDataRepository(
         username: String,
         password: String,
         packageName: String = "",
-        siteUrl: String = "",
-        appName: String = "",
-        category: String = "General",
-        notes: String = "",
         isPinned: Boolean = false
     ): Long {
         if (password.isBlank()) return -1L
-        val cleanService = if (serviceName.isNotBlank()) serviceName.trim() else appName.ifBlank { packageName.ifBlank { "Account" } }
+        val cleanService = if (serviceName.isNotBlank()) serviceName.trim() else packageName.ifBlank { "Account" }
         
         // Save to Encrypted Storage
         val savedEncrypted = encryptedCredentialStorage?.saveCredential(
@@ -108,10 +104,6 @@ class KeyboardDataRepository(
             username = username.trim(),
             password = password,
             packageName = packageName,
-            siteUrl = siteUrl,
-            appName = appName,
-            category = category,
-            notes = notes,
             isPinned = isPinned
         )
 
@@ -121,10 +113,6 @@ class KeyboardDataRepository(
             val updated = existing.copy(
                 password = password,
                 packageName = packageName.ifBlank { existing.packageName },
-                siteUrl = siteUrl.ifBlank { existing.siteUrl },
-                appName = appName.ifBlank { existing.appName },
-                category = category.ifBlank { existing.category },
-                notes = notes.ifBlank { existing.notes },
                 timestamp = System.currentTimeMillis()
             )
             credentialDao.updateCredential(updated)
@@ -136,10 +124,6 @@ class KeyboardDataRepository(
                     username = username.trim(),
                     password = password,
                     packageName = packageName,
-                    siteUrl = siteUrl,
-                    appName = appName,
-                    category = category,
-                    notes = notes,
                     timestamp = System.currentTimeMillis(),
                     isPinned = isPinned
                 )
@@ -219,44 +203,17 @@ class KeyboardDataRepository(
     val recentLongTextLogs: Flow<List<LongTextLog>> = analyticsDao?.getAllTextLogs() ?: flowOf(emptyList())
 
 
-    private val letterCountsBuffer = java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicInteger>()
-    private var lastLetterFlushTime = System.currentTimeMillis()
-
     suspend fun recordLetterTyped(letter: String) {
         if (analyticsDao == null) return
         val cleanLetter = letter.trim()
         if (cleanLetter.isEmpty()) return
-        letterCountsBuffer.computeIfAbsent(cleanLetter) { java.util.concurrent.atomic.AtomicInteger(0) }.incrementAndGet()
+        val existing = analyticsDao.findLetter(cleanLetter)
         val now = System.currentTimeMillis()
-        if (now - lastLetterFlushTime > 8000L || letterCountsBuffer.size > 20) {
-            flushLetterCounts()
+        if (existing != null) {
+            analyticsDao.incrementLetter(cleanLetter, now)
+        } else {
+            analyticsDao.insertLetterStat(LetterUsageStat(letter = cleanLetter, count = 1, lastUsed = now))
         }
-    }
-
-    suspend fun flushLetterCounts() {
-        if (analyticsDao == null || letterCountsBuffer.isEmpty()) return
-        lastLetterFlushTime = System.currentTimeMillis()
-        val snapshot = HashMap<String, Int>()
-        for ((key, counter) in letterCountsBuffer) {
-            val count = counter.getAndSet(0)
-            if (count > 0) {
-                snapshot[key] = count
-            }
-        }
-        if (snapshot.isEmpty()) return
-        val now = System.currentTimeMillis()
-        try {
-            snapshot.forEach { (let, count) ->
-                val existing = analyticsDao.findLetter(let)
-                if (existing != null) {
-                    repeat(count) {
-                        analyticsDao.incrementLetter(let, now)
-                    }
-                } else {
-                    analyticsDao.insertLetterStat(LetterUsageStat(letter = let, count = count.toLong(), lastUsed = now))
-                }
-            }
-        } catch (ignored: Exception) {}
     }
 
     suspend fun recordWordTyped(word: String, locale: String) {

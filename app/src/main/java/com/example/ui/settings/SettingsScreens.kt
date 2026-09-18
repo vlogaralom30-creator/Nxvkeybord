@@ -42,9 +42,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PushPin
@@ -72,7 +70,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -89,7 +86,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -104,7 +100,6 @@ import com.example.data.entity.DictionaryWord
 import com.example.data.entity.SavedCredential
 import com.example.data.entity.TextShortcut
 import com.example.data.preferences.KeyboardSettings
-import com.example.theme.KeyboardThemes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,16 +107,12 @@ fun SettingsHomeScreen(
     settings: KeyboardSettings,
     isKeyboardEnabled: Boolean = true,
     isKeyboardSelected: Boolean = true,
-    onSelectTheme: (String) -> Unit = {},
-    onUpdateUiMode: (String) -> Unit = {},
     onNavigate: (SettingsScreen) -> Unit
 ) {
     val context = LocalContext.current
     var testText by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val activePalette = KeyboardThemes.getPalette(settings.theme)
-    val isRidmikActive = settings.uiMode == "original" || settings.theme.startsWith("ridmik")
 
     Scaffold(
         topBar = {
@@ -130,51 +121,28 @@ fun SettingsHomeScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(
-                                    Brush.linearGradient(
-                                        listOf(
-                                            Color(0xFF0A84FF),
-                                            Color(0xFF5E5CE6)
-                                        )
-                                    )
-                                ),
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "NX",
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
+                                fontSize = 14.sp
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "NXV Keyboard",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                    modifier = Modifier.padding(horizontal = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "PRO",
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                                    )
-                                }
-                            }
                             Text(
-                                text = "বাংলা ও ইংরেজি ডুয়েল আর্কিটেকচার কিবোর্ড",
+                                text = "NXV Keyboard",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = "Geometric Balance Edition",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -194,394 +162,346 @@ fun SettingsHomeScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Hero Status Dashboard Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
-                border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                modifier = Modifier.fillMaxWidth().testTag("card_hero_dashboard")
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // IME Status Row
-                    if (!isKeyboardEnabled) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
-                            }
+            // Keyboard Activation Status Card
+            if (!isKeyboardEnabled) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f)),
+                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.error),
+                    modifier = Modifier.fillMaxWidth().testTag("card_enable_ime")
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(28.dp)
+                            )
                             Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
+                            Column {
                                 Text(
-                                    text = "কিবোর্ড সক্রিয় করা নেই",
+                                    text = "কিবোর্ড চালু করা নেই (Not Enabled)",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.error
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
                                 )
                                 Text(
-                                    text = "Android সেটিংসে NXV Keyboard এনাবল করুন",
+                                    text = "ধাপ ১: Android সেটিংসে গিয়ে NXV Keyboard এনাবল করুন।",
                                     style = MaterialTheme.typography.bodySmall,
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
                                 )
-                            }
-                            Button(
-                                onClick = {
-                                    val intent = Intent(Settings.ACTION_INPUT_METHOD_SETTINGS).apply {
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    }
-                                    context.startActivity(intent)
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.testTag("btn_action_enable_settings")
-                            ) {
-                                Text("এনাবল", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
-                    } else if (!isKeyboardSelected) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                val intent = Intent(Settings.ACTION_INPUT_METHOD_SETTINGS).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.fillMaxWidth().testTag("btn_action_enable_settings"),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.CheckCircleOutline, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "ডিফল্ট কিবোর্ড নির্বাচন করুন",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "সক্রিয় কিবোর্ড হিসেবে NXV বেছে নিন",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Button(
-                                onClick = {
-                                    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-                                    imm?.showInputMethodPicker()
-                                },
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.testTag("btn_action_select_default")
-                            ) {
-                                Text("ডিফল্ট করুন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF4CAF50).copy(alpha = 0.18f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "NXV Keyboard সক্রিয় ও প্রস্তুত",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "সব অ্যাপে সরাসরি লেখার জন্য প্রস্তুত",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            Icon(imageVector = Icons.Default.Keyboard, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("সেটিংসে কিবোর্ড চালু করুন", fontWeight = FontWeight.SemiBold)
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Status Metrics Chips Row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Theme chip
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { onNavigate(SettingsScreen.THEME_LIBRARY) }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(12.dp)
-                                        .clip(CircleShape)
-                                        .background(activePalette.accentColor)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Column {
-                                    Text("থিম", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(
-                                        text = activePalette.themeName,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-
-                        // Layout mode chip (Ridmik vs NXV)
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            border = BorderStroke(1.dp, if (isRidmikActive) Color(0xFF0A84FF).copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                            modifier = Modifier
-                                .weight(1.1f)
-                                .clickable {
-                                    onUpdateUiMode(if (isRidmikActive) "modern" else "original")
-                                }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = if (isRidmikActive) Icons.Default.Layers else Icons.Default.Tune,
-                                    contentDescription = null,
-                                    tint = if (isRidmikActive) Color(0xFF0A84FF) else MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Column {
-                                    Text("লেআউট স্টাইল", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(
-                                        text = if (isRidmikActive) "Ridmik Original" else "NXV Modern",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isRidmikActive) Color(0xFF0A84FF) else MaterialTheme.colorScheme.primary,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-
-                        // Open count chip
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                            modifier = Modifier
-                                .weight(0.9f)
-                                .clickable { onNavigate(SettingsScreen.TYPING_ANALYTICS) }
-                        ) {
-                            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-                                Text("ওপেন কাউন্টার", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            } else if (!isKeyboardSelected) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)),
+                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+                    modifier = Modifier.fillMaxWidth().testTag("card_select_ime")
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircleOutline,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
                                 Text(
-                                    text = "${settings.keyboardOpenCount} বার",
-                                    fontSize = 11.sp,
+                                    text = "ডিফল্ট কিবোর্ড নির্বাচন করুন (Set Default)",
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = "ধাপ ২: NXV Keyboard-কে সক্রিয় কিবোর্ড হিসেবে নির্বাচন করুন।",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                                imm?.showInputMethodPicker()
+                            },
+                            modifier = Modifier.fillMaxWidth().testTag("btn_action_select_default"),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Check, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("NXV Keyboard সিলেক্ট করুন", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            } else {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                    border = BorderStroke(1.dp, Color(0xFF4CAF50).copy(alpha = 0.6f)),
+                    modifier = Modifier.fillMaxWidth().testTag("card_ime_ready")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF4CAF50).copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "NXV Keyboard সক্রিয় ও প্রস্তুত!",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "সব অ্যাপে (Google Search, WhatsApp ইত্যাদি) টাইপ করার জন্য প্রস্তুত।",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
             }
 
-            // Quick 4-Tile Feature Grid
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            // Interactive Typing Bench Card (Geometric Balance chat preview)
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Card 1: Themes & Studio
-                QuickDashboardCard(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.Palette,
-                    iconBg = Color(0xFF0A84FF),
-                    title = "থিম ও স্টুডিও",
-                    subtitle = "১৮+ থিম, ফটো ও কালার",
-                    tag = "quick_theme_btn",
-                    onClick = { onNavigate(SettingsScreen.THEME_LIBRARY) }
-                )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Chat preview messages
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Incoming message
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.Start)
+                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = "How do I type in Bengali using Avro phonetic?",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
 
-                // Card 2: Typing Analytics
-                QuickDashboardCard(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.BarChart,
-                    iconBg = Color(0xFF10B981),
-                    title = "অ্যানালিটিক্স",
-                    subtitle = "বর্ণ ও শব্দ ব্যবহারের রিপোর্ট",
-                    tag = "quick_analytics_btn",
-                    onClick = { onNavigate(SettingsScreen.TYPING_ANALYTICS) }
-                )
+                        // Outgoing message
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 4.dp, bottomStart = 16.dp, bottomEnd = 16.dp))
+                                .background(MaterialTheme.colorScheme.primary)
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = "Just write 'ami banglay likhi' and it translates instantly!",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+
+                        // Translated output
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.Start)
+                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = "আমি বাংলায় লিখি ✨",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Live Interactive Input Field
+                    OutlinedTextField(
+                        value = testText,
+                        onValueChange = { testText = it },
+                        placeholder = { Text("এখানে ট্যাপ করে কিবোর্ড পরীক্ষা করুন...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester)
+                            .testTag("test_typing_input"),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = false,
+                        maxLines = 3
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = {
+                                focusRequester.requestFocus()
+                                keyboardController?.show()
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.testTag("btn_show_keyboard_now")
+                        ) {
+                            Icon(imageVector = Icons.Default.Keyboard, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("কিবোর্ড ওপেন করুন", fontSize = 13.sp)
+                        }
+
+                        TextButton(
+                            onClick = {
+                                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                                imm?.showInputMethodPicker()
+                            }
+                        ) {
+                            Text("Switch Keyboard", fontSize = 13.sp)
+                        }
+                    }
+                }
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Card 3: Size & Keys
-                QuickDashboardCard(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.Tune,
-                    iconBg = Color(0xFFF59E0B),
-                    title = "সাইজ ও বাটন",
-                    subtitle = "উচ্চতা, রো ও পপআপ",
-                    tag = "quick_keys_btn",
-                    onClick = { onNavigate(SettingsScreen.CUSTOMIZE_KEYS) }
-                )
-
-                // Card 4: Backup & Recovery
-                QuickDashboardCard(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Default.CloudDownload,
-                    iconBg = Color(0xFF8B5CF6),
-                    title = "ব্যাকআপ ও রিকভারি",
-                    subtitle = "JSON ট্রান্সফার ও রিকভার",
-                    tag = "quick_backup_btn",
-                    onClick = { onNavigate(SettingsScreen.BACKUP_RESTORE) }
-                )
-            }
-
-            // Live Interactive Keyboard Preview Sandbox Card
-            LiveKeyboardPreviewCard(
-                settings = settings,
-                onSelectTheme = onSelectTheme,
-                onUpdateUiMode = onUpdateUiMode,
-                onOpenThemes = { onNavigate(SettingsScreen.THEME_LIBRARY) }
-            )
 
             // Keyboard Settings Group
-            SettingsCategoryHeader("কিবোর্ড কনফিগারেশন (KEYBOARD)")
-            SettingsTile(
-                icon = Icons.Default.Palette,
-                title = "Theme & Layout Studio (থিম ও লেআউট স্টুডিও)",
-                subtitle = "১৮+ রেডিমেড থিম, ফটো ব্যাকগ্রাউন্ড, কালার, সাইজ ও বাটন কাস্টমাইজেশন",
-                onClick = { onNavigate(SettingsScreen.THEME_LIBRARY) },
-                tag = "tile_theme_studio"
-            )
+            SettingsCategoryHeader("KEYBOARD")
             SettingsTile(
                 icon = Icons.Default.Keyboard,
-                title = "Languages & Layouts (ভাষা ও লেআউট)",
+                title = "Languages & Layouts",
                 subtitle = "English, বাংলা, Avro phonetic typing",
                 onClick = { onNavigate(SettingsScreen.KEYBOARD_PREFS) },
                 tag = "tile_keyboard"
             )
+            SettingsTile(
+                icon = Icons.Default.Tune,
+                title = "Layout, Buttons & Popups (কাস্টমাইজেশন)",
+                subtitle = "Toggle Emoji / Lang buttons, key hints, popup modes",
+                onClick = { onNavigate(SettingsScreen.CUSTOMIZE_KEYS) },
+                tag = "tile_customize_keys"
+            )
+            SettingsTile(
+                icon = Icons.Default.Palette,
+                title = "Themes & Appearance",
+                subtitle = "Puppy Pop, Strawberry Dessert, AMOLED, Dark, Light",
+                onClick = { onNavigate(SettingsScreen.THEME_LIBRARY) },
+                tag = "tile_theme"
+            )
 
             // Typing Group
-            SettingsCategoryHeader("টাইপিং ও সাউন্ড (TYPING & SOUND)")
+            SettingsCategoryHeader("TYPING")
             SettingsTile(
                 icon = Icons.Default.TextFields,
-                title = "Text Correction & Suggestions (শব্দ সাজেশন)",
+                title = "Text Correction & Suggestions",
                 subtitle = "Autocorrect, suggestions strip, auto-spacing",
                 onClick = { onNavigate(SettingsScreen.TYPING_PREFS) },
                 tag = "tile_typing"
             )
             SettingsTile(
                 icon = Icons.Default.VolumeUp,
-                title = "Sound & Haptic Feedback (সাউন্ড ও ভাইব্রেশন)",
+                title = "Sound & Haptic Feedback",
                 subtitle = "Key sound, vibration strength",
                 onClick = { onNavigate(SettingsScreen.SOUND_HAPTIC) },
                 tag = "tile_sound"
             )
 
             // Data & Tools Group
-            SettingsCategoryHeader("ডেটা, ব্যাকআপ ও টুলস (DATA & TOOLS)")
-            SettingsTile(
-                icon = Icons.Default.BarChart,
-                title = "Typing Analytics Dashboard (টাইপিং অ্যানালিটিক্স)",
-                subtitle = "K, B, h, t বর্ণ ও Hi, helo শব্দ ব্যবহারের র‍্যাংকিং, কিবোর্ড ওপেন কাউন্টার ও PDF রিপোর্ট",
-                onClick = { onNavigate(SettingsScreen.TYPING_ANALYTICS) },
-                tag = "tile_analytics"
-            )
-            SettingsTile(
-                icon = Icons.Default.CloudDownload,
-                title = "Backup & Recovery (ব্যাকআপ ও ডেটা রিকভারি)",
-                subtitle = "JSON ফাইল ডাউনলোড ও নতুন ফোনে সেটিংস, থিম, ক্লিপবোর্ড রিকভারি",
-                onClick = { onNavigate(SettingsScreen.BACKUP_RESTORE) },
-                tag = "tile_backup_restore"
-            )
-            SettingsTile(
-                icon = Icons.Default.Memory,
-                title = "System Diagnostics & Memory Leaks (মেমোরি ও ডায়াগনস্টিক)",
-                subtitle = "RAM ও হিপ মেমোরি ইন্সপেক্টর, অটো-এক্সিট টেস্ট ও ১-ট্যাপ র‍্যাম ক্লিন",
-                onClick = { onNavigate(SettingsScreen.SYSTEM_DIAGNOSTICS) },
-                tag = "tile_diagnostics"
-            )
+            SettingsCategoryHeader("DATA & TOOLS")
             SettingsTile(
                 icon = Icons.Default.Lock,
-                title = "Password & Account Vault (পাসওয়ার্ড ভল্ট)",
+                title = "Password & Account Vault",
                 subtitle = "Auto-saved passwords, credentials, 1-tap autofill",
                 onClick = { onNavigate(SettingsScreen.VAULT) },
                 tag = "tile_vault"
             )
             SettingsTile(
                 icon = Icons.Default.ContentPaste,
-                title = "Copypad (ক্লিপবোর্ড ও নোটস)",
+                title = "Copypad (Clipboard)",
                 subtitle = "Permanent storage until deleted or cleared",
                 onClick = { onNavigate(SettingsScreen.CLIPBOARD) },
                 tag = "tile_clipboard"
             )
             SettingsTile(
                 icon = Icons.Default.Book,
-                title = "Personal Dictionary (অভিধান)",
+                title = "Personal Dictionary",
                 subtitle = "Learned words for English and Bangla",
                 onClick = { onNavigate(SettingsScreen.DICTIONARY) },
                 tag = "tile_dictionary"
             )
             SettingsTile(
                 icon = Icons.Default.TextFields,
-                title = "Text Shortcuts (টেক্সট শর্টকাট)",
+                title = "Text Shortcuts",
                 subtitle = "Expand abbreviations (e.g. brb -> Be right back)",
                 onClick = { onNavigate(SettingsScreen.SHORTCUTS) },
                 tag = "tile_shortcuts"
             )
+            SettingsTile(
+                icon = Icons.Default.BarChart,
+                title = "Typing Analytics & Usage (টাইপিং অ্যানালিটিক্স)",
+                subtitle = "K, B, h, t বর্ণ ও Hi, helo শব্দ ব্যবহারের র‍্যাংকিং, কিবোর্ড ওপেন কাউন্টার ও PDF রিপোর্ট",
+                onClick = { onNavigate(SettingsScreen.TYPING_ANALYTICS) },
+                tag = "tile_analytics"
+            )
+            SettingsTile(
+                icon = Icons.Default.CloudDownload,
+                title = "Backup & Recovery (ব্যাকআপ ও রিকভারি)",
+                subtitle = "JSON ফাইল ডাউনলোড ও নতুন ফোনে সেটিংস, থিম, ক্লিপবোর্ড রিকভারি",
+                onClick = { onNavigate(SettingsScreen.BACKUP_RESTORE) },
+                tag = "tile_backup_restore"
+            )
 
             // Privacy & Info Group
-            SettingsCategoryHeader("নিরাপত্তা ও পরিচিতি (SECURITY & ABOUT)")
+            SettingsCategoryHeader("SECURITY & ABOUT")
             SettingsTile(
                 icon = Icons.Default.Security,
-                title = "Privacy & Security (গোপনীয়তা)",
+                title = "Privacy & Security",
                 subtitle = "100% offline, zero text tracking guarantee",
                 onClick = { onNavigate(SettingsScreen.PRIVACY) },
                 tag = "tile_privacy"
             )
             SettingsTile(
                 icon = Icons.Default.Info,
-                title = "About NXV Keyboard (সম্পর্কে)",
+                title = "About NXV Keyboard",
                 subtitle = "Developed by Rony Ahmmad • Naxxivo",
                 onClick = { onNavigate(SettingsScreen.ABOUT) },
                 tag = "tile_about"
@@ -598,7 +518,7 @@ fun SettingsHomeScreen(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "NXV Keyboard Pro",
+                    text = "NXV Keyboard",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.primary
@@ -616,61 +536,6 @@ fun SettingsHomeScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-        }
-    }
-}
-
-@Composable
-private fun QuickDashboardCard(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    iconBg: Color,
-    title: String,
-    subtitle: String,
-    tag: String,
-    onClick: () -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
-            .testTag(tag)
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(iconBg.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconBg,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = title,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }

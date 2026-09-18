@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Dialpad
 import androidx.compose.material.icons.filled.Edit
@@ -52,11 +51,6 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,9 +72,6 @@ data class AutoSavePromptData(
     val serviceName: String,
     val username: String,
     val password: String,
-    val siteUrl: String = "",
-    val appName: String = "",
-    val category: String = "",
     val onConfirmSave: () -> Unit,
     val onDismiss: () -> Unit
 )
@@ -103,11 +94,6 @@ fun SuggestionStrip(
     voiceStatusText: String = "",
     voiceRmsLevel: Float = 0f,
     voiceErrorMessage: String? = null,
-    enabledShortcuts: Set<String> = emptySet(),
-    shortcutOrder: String = "",
-    showSuggestionMicIcon: Boolean = true,
-    showSuggestionVideoIcon: Boolean = true,
-    showQuickPasteChip: Boolean = true,
     onStopVoice: () -> Unit = {},
     onRequestVoicePermission: (() -> Unit)? = null,
     onToggleToolbar: () -> Unit = {},
@@ -146,21 +132,12 @@ fun SuggestionStrip(
     onMediaTogglePlayPause: () -> Unit = {},
     onMediaOpenBrowser: () -> Unit = {},
     onMediaClosePlayer: () -> Unit = {},
-    onOpenDesktopBrowser: () -> Unit = {},
     isVideoOverlayActive: Boolean = false,
     isVideoPlaying: Boolean = false,
     onToggleVideoPlayPause: () -> Unit = {},
     onOpenVideoOverlaySettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var forceShowSixIconsInBar by remember { mutableStateOf(false) }
-
-    LaunchedEffect(suggestions) {
-        if (suggestions.isNotEmpty()) {
-            forceShowSixIconsInBar = false
-        }
-    }
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -243,24 +220,21 @@ fun SuggestionStrip(
                     .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Expand / Collapse Chevron Button (Single tap toggles toolbar, double-tap toggles 6-icon action bar - Ridmik style!)
+                // Expand / Collapse Chevron Button
                 Box(
                     modifier = Modifier
                         .padding(start = 2.dp, end = 2.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(
-                            if (forceShowSixIconsInBar || isToolbarExpanded) palette.accentColor.copy(alpha = 0.20f)
+                            if (isToolbarExpanded) palette.accentColor.copy(alpha = 0.20f)
                             else palette.keyActionBackground.copy(alpha = 0.65f)
                         )
                         .border(
                             width = 0.8.dp,
-                            color = if (forceShowSixIconsInBar || isToolbarExpanded) palette.accentColor.copy(alpha = 0.5f) else palette.keyBorderColor.copy(alpha = 0.3f),
+                            color = if (isToolbarExpanded) palette.accentColor.copy(alpha = 0.5f) else palette.keyBorderColor.copy(alpha = 0.3f),
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .combinedClickable(
-                            onClick = { onToggleToolbar() },
-                            onDoubleClick = { forceShowSixIconsInBar = !forceShowSixIconsInBar }
-                        )
+                        .clickable { onToggleToolbar() }
                         .padding(horizontal = 6.dp, vertical = 5.dp)
                         .testTag("toolbar_expand_toggle"),
                     contentAlignment = Alignment.Center
@@ -272,7 +246,7 @@ fun SuggestionStrip(
                         Icon(
                             imageVector = if (isToolbarExpanded) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
                             contentDescription = if (isToolbarExpanded) "Collapse Toolbar" else "Expand Toolbar",
-                            tint = if (forceShowSixIconsInBar || isToolbarExpanded) palette.accentColor else palette.textColor,
+                            tint = if (isToolbarExpanded) palette.accentColor else palette.textColor,
                             modifier = Modifier.size(16.dp)
                         )
                         if (!isToolbarExpanded && clipboardCount > 0) {
@@ -286,7 +260,7 @@ fun SuggestionStrip(
                     }
                 }
 
-                // Suggestions Area, Live Voice Bar, TikTok Downloader Bar, or 6-Icon Action Bar
+                // Suggestions Area, Live Voice Bar, or TikTok Downloader Bar
                 if (isVoiceListening) {
                     LiveVoiceSuggestionContent(
                         voiceStatus = voiceStatusText,
@@ -314,17 +288,16 @@ fun SuggestionStrip(
                         onPlayInKeyboard = onTikTokPlayInKeyboard,
                         modifier = Modifier.weight(1f)
                     )
-                } else if (forceShowSixIconsInBar || (suggestions.isEmpty() && recentClip == null)) {
-                    // 6 Essential Quick Action Icons: Copypad, Text, Number, Themes, Media, Settings
-                    SixQuickIconsRow(
+                } else if (activeMediaTitle.isNotBlank()) {
+                    MusicPlayerSuggestionBar(
+                        title = activeMediaTitle,
+                        isPlaying = isMediaPlaying,
+                        currentPosMs = mediaCurrentPosMs,
+                        durationMs = mediaDurationMs,
                         palette = palette,
-                        clipboardCount = clipboardCount,
-                        onClipboardClick = onClipboardClick,
-                        onTextEditClick = onTextEditClick,
-                        onNumberPadClick = onNumberPadClick,
-                        onThemesClick = onThemesClick,
-                        onMediaClick = onMediaClick,
-                        onSettingsClick = onSettingsClick,
+                        onTogglePlayPause = onMediaTogglePlayPause,
+                        onOpenMediaBrowser = onMediaOpenBrowser,
+                        onClosePlayer = onMediaClosePlayer,
                         modifier = Modifier.weight(1f)
                     )
                 } else {
@@ -336,7 +309,7 @@ fun SuggestionStrip(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Quick Paste chip when clipboard has content and no suggestions yet
-                        if (showQuickPasteChip && recentClip != null && onQuickPaste != null && suggestions.isEmpty()) {
+                        if (recentClip != null && onQuickPaste != null && suggestions.isEmpty()) {
                             val preview = if (recentClip.text.length > 22) recentClip.text.take(22) + "…" else recentClip.text
                             Box(
                                 modifier = Modifier
@@ -443,112 +416,62 @@ fun SuggestionStrip(
                 }
 
                 // Video Overlay Quick Controller (Positioned right beside Voice Mic button)
-                if (showSuggestionVideoIcon) {
-                    if (isVideoOverlayActive) {
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 3.dp)
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (isVideoPlaying) palette.accentColor.copy(alpha = 0.22f)
-                                    else palette.keyBackground
-                                )
-                                .border(
-                                    width = 1.2.dp,
-                                    color = if (isVideoPlaying) palette.accentColor else palette.keyBorderColor.copy(alpha = 0.45f),
-                                    shape = CircleShape
-                                )
-                                .clickable { onToggleVideoPlayPause() }
-                                .testTag("video_controller_play_pause_btn"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isVideoPlaying) "Pause Video Overlay" else "Play Video Overlay",
-                                tint = if (isVideoPlaying) palette.accentColor else palette.textColor,
-                                modifier = Modifier.size(16.dp)
+                if (isVideoOverlayActive) {
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 3.dp)
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isVideoPlaying) palette.accentColor.copy(alpha = 0.22f)
+                                else palette.keyBackground
                             )
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 3.dp)
-                                .size(30.dp)
-                                .clip(CircleShape)
-                                .background(palette.keyBackground.copy(alpha = 0.6f))
-                                .clickable { onOpenVideoOverlaySettings() }
-                                .testTag("video_overlay_quick_launch_btn"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Videocam,
-                                contentDescription = "Video Overlay",
-                                tint = palette.textColor.copy(alpha = 0.85f),
-                                modifier = Modifier.size(15.dp)
+                            .border(
+                                width = 1.2.dp,
+                                color = if (isVideoPlaying) palette.accentColor else palette.keyBorderColor.copy(alpha = 0.45f),
+                                shape = CircleShape
                             )
-                        }
+                            .clickable { onToggleVideoPlayPause() }
+                            .testTag("video_controller_play_pause_btn"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (isVideoPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = if (isVideoPlaying) "Pause Video Overlay" else "Play Video Overlay",
+                            tint = if (isVideoPlaying) palette.accentColor else palette.textColor,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
-                }
-
-                // Voice Mic Button / Media Controller (Converts to Play/Pause when audio is playing)
-                if (showSuggestionMicIcon) {
-                    if (activeMediaTitle.isNotBlank()) {
-                        Box(
-                            modifier = Modifier
-                                .padding(start = 2.dp, end = 2.dp)
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (isMediaPlaying) palette.accentColor
-                                    else palette.keyActionBackground.copy(alpha = 0.85f)
-                                )
-                                .border(
-                                    width = 1.dp,
-                                    color = if (isMediaPlaying) palette.accentColor else palette.keyBorderColor.copy(alpha = 0.4f),
-                                    shape = CircleShape
-                                )
-                                .clickable { onMediaTogglePlayPause() }
-                                .testTag("media_controller_mic_btn"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = if (isMediaPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isMediaPlaying) "Pause Audio" else "Play Audio",
-                                tint = if (isMediaPlaying) Color.White else palette.textColor,
-                                modifier = Modifier.size(17.dp)
-                            )
-                        }
-                    } else {
-                        VoiceMicButton(
-                            isListening = isVoiceListening,
-                            palette = palette,
-                            onClick = if (isVoiceListening) onStopVoice else onVoiceClick,
-                            modifier = Modifier.padding(start = 2.dp, end = 2.dp)
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 3.dp)
+                            .size(30.dp)
+                            .clip(CircleShape)
+                            .background(palette.keyBackground.copy(alpha = 0.6f))
+                            .clickable { onOpenVideoOverlaySettings() }
+                            .testTag("video_overlay_quick_launch_btn"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Videocam,
+                            contentDescription = "Video Overlay",
+                            tint = palette.textColor.copy(alpha = 0.85f),
+                            modifier = Modifier.size(15.dp)
                         )
                     }
                 }
+
+                // Voice Mic Button (Positioned on the RIGHT side of the suggestion bar)
+                VoiceMicButton(
+                    isListening = isVoiceListening,
+                    palette = palette,
+                    onClick = if (isVoiceListening) onStopVoice else onVoiceClick,
+                    modifier = Modifier.padding(start = 2.dp, end = 2.dp)
+                )
             }
 
             // 2. Middle Layer: Dedicated Action Bar when expanded
-            val defaultOrder = listOf(
-                "browser", "voice", "clipboard", "tiktok", "stickers", "media", "video_overlay",
-                "text_edit", "numpad", "vault", "themes", "language", "vibration",
-                "sound", "one_handed", "settings"
-            )
-            val effectiveOrder = remember(shortcutOrder) {
-                if (shortcutOrder.isNotBlank()) {
-                    val customList = shortcutOrder.split(",").filter { it.isNotBlank() }.toMutableList()
-                    defaultOrder.forEach { if (!customList.contains(it)) customList.add(it) }
-                    customList
-                } else {
-                    defaultOrder
-                }
-            }
-            val isEnabled: (String) -> Boolean = { id ->
-                if (enabledShortcuts.isEmpty()) true else enabledShortcuts.contains(id)
-            }
-
             AnimatedVisibility(
                 visible = isToolbarExpanded,
                 enter = expandVertically() + fadeIn(),
@@ -575,176 +498,160 @@ fun SuggestionStrip(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        for (shortcutId in effectiveOrder) {
-                            if (isEnabled(shortcutId)) {
-                                when (shortcutId) {
-                                    "browser" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.Computer,
-                                            label = "PC Browser",
-                                            palette = palette,
-                                            tag = "toolbar_desktop_browser",
-                                            onClick = onOpenDesktopBrowser
-                                        )
-                                    }
-                                    "voice" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.Mic,
-                                            label = if (isVoiceListening) "Voice (Active)" else "Voice",
-                                            palette = palette,
-                                            isActive = isVoiceListening,
-                                            tag = "toolbar_voice_typing",
-                                            onClick = if (isVoiceListening) onStopVoice else onVoiceClick
-                                        )
-                                    }
-                                    "clipboard" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.ContentPaste,
-                                            label = if (clipboardCount > 0) "Clipboard ($clipboardCount)" else "Clipboard",
-                                            palette = palette,
-                                            isActive = clipboardCount > 0,
-                                            tag = "toolbar_clipboard",
-                                            onClick = onClipboardClick
-                                        )
-                                    }
-                                    "tiktok" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.Download,
-                                            label = "TikTok",
-                                            palette = palette,
-                                            isActive = tikTokState !is TikTokDownloadState.Idle,
-                                            tag = "toolbar_tiktok_downloader",
-                                            onClick = onTikTokToolbarClick
-                                        )
-                                    }
-                                    "stickers" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.AutoAwesome,
-                                            label = "Stickers",
-                                            palette = palette,
-                                            tag = "toolbar_stickers",
-                                            onClick = onStickersClick
-                                        )
-                                    }
-                                    "media" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.Audiotrack,
-                                            label = if (activeMediaTitle.isNotBlank()) "Media 🎵" else "Media",
-                                            palette = palette,
-                                            isActive = activeMediaTitle.isNotBlank(),
-                                            tag = "toolbar_media",
-                                            onClick = onMediaClick
-                                        )
-                                    }
-                                    "video_overlay" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.SwitchVideo,
-                                            label = if (isVideoOverlayActive) "Video Overlay 🎬" else "Video Overlay",
-                                            palette = palette,
-                                            isActive = isVideoOverlayActive,
-                                            tag = "toolbar_video_overlay",
-                                            onClick = onOpenVideoOverlaySettings
-                                        )
-                                    }
-                                    "text_edit" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.Edit,
-                                            label = "Text Edit",
-                                            palette = palette,
-                                            tag = "toolbar_text_edit",
-                                            onClick = onTextEditClick
-                                        )
-                                    }
-                                    "numpad" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.Dialpad,
-                                            label = "Numpad",
-                                            palette = palette,
-                                            tag = "toolbar_numpad",
-                                            onClick = onNumberPadClick
-                                        )
-                                    }
-                                    "vault" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.Lock,
-                                            label = "Vault",
-                                            palette = palette,
-                                            tag = "toolbar_vault",
-                                            onClick = onVaultClick
-                                        )
-                                    }
-                                    "themes" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.Palette,
-                                            label = "Themes",
-                                            palette = palette,
-                                            tag = "toolbar_themes",
-                                            onClick = onThemesClick,
-                                            onLongClick = onThemesLongClick
-                                        )
-                                    }
-                                    "language" -> {
-                                        val langLabel = when (currentLanguage.lowercase()) {
-                                            "bangla" -> "বাংলা"
-                                            "avro" -> "অভ্র"
-                                            else -> "English"
-                                        }
-                                        ActionToolChip(
-                                            icon = Icons.Default.Language,
-                                            label = langLabel,
-                                            palette = palette,
-                                            tag = "toolbar_language_toggle",
-                                            onClick = onLanguageCycle,
-                                            onLongClick = onLanguageLongPress
-                                        )
-                                    }
-                                    "vibration" -> {
-                                        ActionToolChip(
-                                            icon = if (keyVibrationEnabled) Icons.Default.Vibration else Icons.Default.Smartphone,
-                                            label = if (keyVibrationEnabled) "Vibration ON" else "Vibration OFF",
-                                            palette = palette,
-                                            isActive = keyVibrationEnabled,
-                                            tag = "toolbar_toggle_vibration",
-                                            onClick = onToggleVibration
-                                        )
-                                    }
-                                    "sound" -> {
-                                        ActionToolChip(
-                                            icon = if (keySoundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-                                            label = if (keySoundEnabled) "Sound ON" else "Sound OFF",
-                                            palette = palette,
-                                            isActive = keySoundEnabled,
-                                            tag = "toolbar_toggle_sound",
-                                            onClick = onToggleSound
-                                        )
-                                    }
-                                    "one_handed" -> {
-                                        val oneHandLabel = when (oneHandedMode) {
-                                            "right" -> "Right Hand"
-                                            "left" -> "Left Hand"
-                                            else -> "Full Width"
-                                        }
-                                        ActionToolChip(
-                                            icon = Icons.Default.AspectRatio,
-                                            label = oneHandLabel,
-                                            palette = palette,
-                                            isActive = oneHandedMode != "none",
-                                            tag = "toolbar_one_handed",
-                                            onClick = onToggleOneHanded
-                                        )
-                                    }
-                                    "settings" -> {
-                                        ActionToolChip(
-                                            icon = Icons.Default.Settings,
-                                            label = "Settings",
-                                            palette = palette,
-                                            tag = "toolbar_settings",
-                                            onClick = onSettingsClick
-                                        )
-                                    }
-                                }
-                            }
+                        // 1. Voice Typing Action
+                        ActionToolChip(
+                            icon = Icons.Default.Mic,
+                            label = if (isVoiceListening) "Voice (Active)" else "Voice",
+                            palette = palette,
+                            isActive = isVoiceListening,
+                            tag = "toolbar_voice_typing",
+                            onClick = if (isVoiceListening) onStopVoice else onVoiceClick
+                        )
+
+                        // 2. Copypad / Clipboard Action
+                        ActionToolChip(
+                            icon = Icons.Default.ContentPaste,
+                            label = if (clipboardCount > 0) "Clipboard ($clipboardCount)" else "Clipboard",
+                            palette = palette,
+                            isActive = clipboardCount > 0,
+                            tag = "toolbar_clipboard",
+                            onClick = onClipboardClick
+                        )
+
+                        // 2.1 TikTok Downloader Action
+                        ActionToolChip(
+                            icon = Icons.Default.Download,
+                            label = "TikTok",
+                            palette = palette,
+                            isActive = tikTokState !is TikTokDownloadState.Idle,
+                            tag = "toolbar_tiktok_downloader",
+                            onClick = onTikTokToolbarClick
+                        )
+
+                        // 2.2 Stickers Action
+                        ActionToolChip(
+                            icon = Icons.Default.AutoAwesome,
+                            label = "Stickers",
+                            palette = palette,
+                            tag = "toolbar_stickers",
+                            onClick = onStickersClick
+                        )
+
+                        // 2.3 Media & Music Player Action
+                        ActionToolChip(
+                            icon = Icons.Default.Audiotrack,
+                            label = if (activeMediaTitle.isNotBlank()) "Media 🎵" else "Media",
+                            palette = palette,
+                            isActive = activeMediaTitle.isNotBlank(),
+                            tag = "toolbar_media",
+                            onClick = onMediaClick
+                        )
+
+                        // 2.3b Video Overlay Background Action
+                        ActionToolChip(
+                            icon = Icons.Default.SwitchVideo,
+                            label = if (isVideoOverlayActive) "Video Overlay 🎬" else "Video Overlay",
+                            palette = palette,
+                            isActive = isVideoOverlayActive,
+                            tag = "toolbar_video_overlay",
+                            onClick = onOpenVideoOverlaySettings
+                        )
+
+                        // 2. Text Edit Pad Action
+                        ActionToolChip(
+                            icon = Icons.Default.Edit,
+                            label = "Text Edit",
+                            palette = palette,
+                            tag = "toolbar_text_edit",
+                            onClick = onTextEditClick
+                        )
+
+                        // 3. Dialer / Numpad Action
+                        ActionToolChip(
+                            icon = Icons.Default.Dialpad,
+                            label = "Numpad",
+                            palette = palette,
+                            tag = "toolbar_numpad",
+                            onClick = onNumberPadClick
+                        )
+
+                        // 4. Password Vault Action
+                        ActionToolChip(
+                            icon = Icons.Default.Lock,
+                            label = "Vault",
+                            palette = palette,
+                            tag = "toolbar_vault",
+                            onClick = onVaultClick
+                        )
+
+                        // 3. Theme Library Action
+                        ActionToolChip(
+                            icon = Icons.Default.Palette,
+                            label = "Themes",
+                            palette = palette,
+                            tag = "toolbar_themes",
+                            onClick = onThemesClick,
+                            onLongClick = onThemesLongClick
+                        )
+
+                        // 4. Language Switcher Action
+                        val langLabel = when (currentLanguage.lowercase()) {
+                            "bangla" -> "বাংলা"
+                            "avro" -> "অভ্র"
+                            else -> "English"
                         }
+                        ActionToolChip(
+                            icon = Icons.Default.Language,
+                            label = langLabel,
+                            palette = palette,
+                            tag = "toolbar_language_toggle",
+                            onClick = onLanguageCycle,
+                            onLongClick = onLanguageLongPress
+                        )
+
+                        // 5. Vibration / Haptics Toggle Action
+                        ActionToolChip(
+                            icon = if (keyVibrationEnabled) Icons.Default.Vibration else Icons.Default.Smartphone,
+                            label = if (keyVibrationEnabled) "Vibration ON" else "Vibration OFF",
+                            palette = palette,
+                            isActive = keyVibrationEnabled,
+                            tag = "toolbar_toggle_vibration",
+                            onClick = onToggleVibration
+                        )
+
+                        // 6. Sound Toggle Action
+                        ActionToolChip(
+                            icon = if (keySoundEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                            label = if (keySoundEnabled) "Sound ON" else "Sound OFF",
+                            palette = palette,
+                            isActive = keySoundEnabled,
+                            tag = "toolbar_toggle_sound",
+                            onClick = onToggleSound
+                        )
+
+                        // 7. One-Handed Mode Action
+                        val oneHandLabel = when (oneHandedMode) {
+                            "right" -> "Right Hand"
+                            "left" -> "Left Hand"
+                            else -> "Full Width"
+                        }
+                        ActionToolChip(
+                            icon = Icons.Default.AspectRatio,
+                            label = oneHandLabel,
+                            palette = palette,
+                            isActive = oneHandedMode != "none",
+                            tag = "toolbar_one_handed",
+                            onClick = onToggleOneHanded
+                        )
+
+                        // 8. Settings Action
+                        ActionToolChip(
+                            icon = Icons.Default.Settings,
+                            label = "Settings",
+                            palette = palette,
+                            tag = "toolbar_settings",
+                            onClick = onSettingsClick
+                        )
                     }
                 }
             }
@@ -810,135 +717,3 @@ private fun ActionToolChip(
         }
     }
 }
-
-@Composable
-fun SixQuickIconsRow(
-    palette: KeyboardPalette,
-    clipboardCount: Int,
-    onClipboardClick: () -> Unit,
-    onTextEditClick: () -> Unit,
-    onNumberPadClick: () -> Unit,
-    onThemesClick: () -> Unit,
-    onMediaClick: () -> Unit,
-    onSettingsClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 1. Copypad / Clipboard
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .clickable { onClipboardClick() }
-                .testTag("quick_bar_clipboard"),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.ContentPaste,
-                contentDescription = "Clipboard / Copypad",
-                tint = palette.textColor.copy(alpha = 0.85f),
-                modifier = Modifier.size(17.dp)
-            )
-            if (clipboardCount > 0) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 4.dp, end = 4.dp)
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(palette.accentColor)
-                )
-            }
-        }
-
-        // 2. Text Edit Pad
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .clickable { onTextEditClick() }
-                .testTag("quick_bar_text_edit"),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Edit,
-                contentDescription = "Text Edit",
-                tint = palette.textColor.copy(alpha = 0.85f),
-                modifier = Modifier.size(17.dp)
-            )
-        }
-
-        // 3. Number Pad
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .clickable { onNumberPadClick() }
-                .testTag("quick_bar_number_pad"),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Dialpad,
-                contentDescription = "Number Pad",
-                tint = palette.textColor.copy(alpha = 0.85f),
-                modifier = Modifier.size(17.dp)
-            )
-        }
-
-        // 4. Themes
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .clickable { onThemesClick() }
-                .testTag("quick_bar_themes"),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Palette,
-                contentDescription = "Themes",
-                tint = palette.textColor.copy(alpha = 0.85f),
-                modifier = Modifier.size(17.dp)
-            )
-        }
-
-        // 5. Video / Media
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .clickable { onMediaClick() }
-                .testTag("quick_bar_media"),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Videocam,
-                contentDescription = "Video & Audio Media",
-                tint = palette.accentColor,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-
-        // 6. Settings
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .clickable { onSettingsClick() }
-                .testTag("quick_bar_settings"),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Settings",
-                tint = palette.textColor.copy(alpha = 0.85f),
-                modifier = Modifier.size(17.dp)
-            )
-        }
-    }
-}
-

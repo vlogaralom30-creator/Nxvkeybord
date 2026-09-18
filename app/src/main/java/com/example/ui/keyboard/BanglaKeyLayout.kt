@@ -60,6 +60,9 @@ fun BanglaKeyLayout(
                     popupMode = popupMode,
                     columnIndex = index,
                     totalColumns = rows[0].size,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -80,6 +83,9 @@ fun BanglaKeyLayout(
                     popupMode = popupMode,
                     columnIndex = index,
                     totalColumns = rows[1].size,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -98,6 +104,9 @@ fun BanglaKeyLayout(
                     palette = palette,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) }
                 )
             }
@@ -129,6 +138,9 @@ fun BanglaKeyLayout(
                     palette = palette,
                     showSubLabel = showKeySubLabels,
                     popupMode = popupMode,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) }
                 )
             }

@@ -356,17 +356,17 @@ fun TypingAnalyticsScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("বর্ণ (${filteredLetters.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                    text = { Text("🔤 বর্ণ (${filteredLetters.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("শব্দ (${filteredWords.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                    text = { Text("💬 শব্দ (${filteredWords.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
                 )
                 Tab(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    text = { Text("মেসেজ লগ (${filteredLogs.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                    text = { Text("📝 মেসেজ লগ (${filteredLogs.size})", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
                 )
             }
 

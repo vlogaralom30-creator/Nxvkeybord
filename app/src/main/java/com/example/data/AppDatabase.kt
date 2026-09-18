@@ -27,7 +27,7 @@ import com.example.data.entity.WordUsageStat
         WordUsageStat::class,
         LongTextLog::class
     ],
-    version = 4,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

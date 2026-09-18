@@ -42,14 +42,12 @@ import com.example.language.avro.AvroPhoneticEngine
 import com.example.suggestion.SuggestionEngine
 import com.example.suggestion.SuggestionItem
 import com.example.downloader.tiktok.TikTokDownloadManager
-import com.example.security.StrongPasswordGenerator
 import com.example.sticker.StickerItem
 import com.example.sticker.StickerManager
 import com.example.ui.keyboard.AutoSavePromptData
 import com.example.ui.keyboard.KeyboardRootView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -583,8 +581,8 @@ class NXVInputMethodService : InputMethodService(),
             if (word.contains("@") || word.length >= 3) {
                 lastObservedUsername = word
             }
-            // Track letter typing analytics in background without blocking Main thread
-            serviceScope.launch(Dispatchers.IO) {
+            // Track letter typing analytics
+            serviceScope.launch {
                 val app = application as? NXVApplication ?: NXVApplication.instance
                 app.repository.recordLetterTyped(effectiveChar)
             }
@@ -683,47 +681,17 @@ class NXVInputMethodService : InputMethodService(),
         refreshSuggestions()
     }
 
-    private fun detectCategory(service: String, pkg: String): String {
-        val text = "$service $pkg".lowercase()
-        return when {
-            text.contains("facebook") || text.contains("twitter") || text.contains("instagram") ||
-                    text.contains("tiktok") || text.contains("linkedin") || text.contains("discord") -> "Social"
-            text.contains("bank") || text.contains("pay") || text.contains("bkash") ||
-                    text.contains("nagad") || text.contains("paypal") || text.contains("finance") -> "Banking & Finance"
-            text.contains("gmail") || text.contains("mail") || text.contains("outlook") ||
-                    text.contains("yahoo") || text.contains("google") -> "Email & Work"
-            text.contains("shop") || text.contains("amazon") || text.contains("daraz") ||
-                    text.contains("ebay") || text.contains("cart") -> "Shopping"
-            else -> "General"
-        }
-    }
-
-    private fun detectSiteUrl(pkg: String, service: String): String {
-        val isBrowser = pkg.contains("chrome") || pkg.contains("firefox") || pkg.contains("browser") ||
-                pkg.contains("opera") || pkg.contains("brave") || pkg.contains("edge") || pkg.contains("duckduckgo")
-        if (isBrowser) {
-            val cleanName = service.lowercase().replace(" ", "").removeSuffix("browser").removeSuffix("chrome")
-            return if (cleanName.isNotBlank()) "https://$cleanName.com" else "https://web.app"
-        }
-        return ""
-    }
-
     private fun checkAndOfferPasswordSave() {
         if (isCurrentFieldPassword && currentPasswordBuffer.length >= 3) {
             val passToSave = currentPasswordBuffer.toString()
             val serviceName = currentAppName.ifBlank { "Account" }
             val username = lastObservedUsername
             val pkg = currentPackageName
-            val siteUrl = detectSiteUrl(pkg, serviceName)
-            val category = detectCategory(serviceName, pkg)
 
             autoSavePromptState = AutoSavePromptData(
                 serviceName = serviceName,
                 username = username,
                 password = passToSave,
-                siteUrl = siteUrl,
-                appName = currentAppName,
-                category = category,
                 onConfirmSave = {
                     serviceScope.launch {
                         val app = application as? NXVApplication ?: NXVApplication.instance
@@ -731,10 +699,7 @@ class NXVInputMethodService : InputMethodService(),
                             serviceName = serviceName,
                             username = username,
                             password = passToSave,
-                            packageName = pkg,
-                            siteUrl = siteUrl,
-                            appName = currentAppName,
-                            category = category
+                            packageName = pkg
                         )
                     }
                     autoSavePromptState = null
@@ -840,25 +805,19 @@ class NXVInputMethodService : InputMethodService(),
         }
     }
 
-    private var refreshSuggestionsJob: Job? = null
-
     private fun refreshSuggestions() {
-        refreshSuggestionsJob?.cancel()
-        refreshSuggestionsJob = serviceScope.launch(Dispatchers.Default) {
+        serviceScope.launch {
             val settings = currentSettingsState.value
             val isPass = inputConnectionManager.isPasswordField()
 
             if (isPass) {
                 // In password fields, standard text prediction is disabled for security,
-                // but we check Encrypted Storage for matching saved credentials to offer 1-tap autofill
-                // and offer a strong password generator chip!
+                // but we check Encrypted Storage for matching saved credentials to offer 1-tap autofill!
                 val app = application as? NXVApplication ?: NXVApplication.instance
                 val matchingCreds = app.repository.getCredentialsForPackageOrQuery(
                     packageName = currentPackageName,
                     query = currentAppName
                 )
-
-                val chips = mutableListOf<SuggestionItem>()
 
                 if (matchingCreds.isNotEmpty()) {
                     val autofillChips = matchingCreds.take(2).map { cred ->
@@ -873,20 +832,10 @@ class NXVInputMethodService : InputMethodService(),
                             isPrimary = true
                         )
                     }
-                    chips.addAll(autofillChips)
+                    suggestionsState.value = autofillChips
+                } else {
+                    suggestionsState.value = emptyList()
                 }
-
-                // Add Strong Password Suggestion chip
-                val strongPass = StrongPasswordGenerator.generatePassword(16)
-                chips.add(
-                    SuggestionItem(
-                        displayText = "⚡ Strong Pass: $strongPass",
-                        replacementText = strongPass,
-                        isPrimary = matchingCreds.isEmpty()
-                    )
-                )
-
-                suggestionsState.value = chips
                 return@launch
             }
 

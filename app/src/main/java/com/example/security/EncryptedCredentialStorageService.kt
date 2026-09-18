@@ -60,7 +60,7 @@ class EncryptedCredentialStorageService(
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             Log.w(TAG, "Failed to initialize EncryptedSharedPreferences, using standard secure fallback", e)
             context.getSharedPreferences("${PREFS_FILE_NAME}_fallback", Context.MODE_PRIVATE)
         }
@@ -106,15 +106,11 @@ class EncryptedCredentialStorageService(
         username: String,
         password: String,
         packageName: String = "",
-        siteUrl: String = "",
-        appName: String = "",
-        category: String = "General",
-        notes: String = "",
         isPinned: Boolean = false
     ): SavedCredential = withContext(ioDispatcher) {
         mutex.withLock {
             val currentList = _credentialsFlow.value.toMutableList()
-            val cleanService = if (serviceName.isNotBlank()) serviceName.trim() else appName.ifBlank { packageName.ifBlank { "Account" } }
+            val cleanService = if (serviceName.isNotBlank()) serviceName.trim() else packageName.ifBlank { "Account" }
             val cleanUsername = username.trim()
             val cleanPassword = password.trim()
 
@@ -129,10 +125,6 @@ class EncryptedCredentialStorageService(
                 val updated = existing.copy(
                     password = cleanPassword,
                     packageName = packageName.ifBlank { existing.packageName },
-                    siteUrl = siteUrl.ifBlank { existing.siteUrl },
-                    appName = appName.ifBlank { existing.appName },
-                    category = category.ifBlank { existing.category },
-                    notes = notes.ifBlank { existing.notes },
                     timestamp = System.currentTimeMillis(),
                     isPinned = if (isPinned) true else existing.isPinned
                 )
@@ -146,10 +138,6 @@ class EncryptedCredentialStorageService(
                     username = cleanUsername,
                     password = cleanPassword,
                     packageName = packageName,
-                    siteUrl = siteUrl,
-                    appName = appName,
-                    category = category,
-                    notes = notes,
                     timestamp = System.currentTimeMillis(),
                     isPinned = isPinned
                 )

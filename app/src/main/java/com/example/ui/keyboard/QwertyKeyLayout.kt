@@ -82,8 +82,7 @@ fun QwertyKeyLayout(
                         columnIndex = index,
                         totalColumns = 10,
                         onTap = { onCharTyped(num) },
-                        onLongPress = { alt?.let { onCharTyped(it) } },
-                        onDelete = onDelete
+                        onLongPress = { alt?.let { onCharTyped(it) } }
                     )
                 }
             }
@@ -114,9 +113,11 @@ fun QwertyKeyLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) },
-                    onLongPress = { alt?.let { onCharTyped(it) } },
-                    onDelete = onDelete
+                    onLongPress = { alt?.let { onCharTyped(it) } }
                 )
             }
         }
@@ -141,9 +142,11 @@ fun QwertyKeyLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) },
-                    onLongPress = { alt?.let { onCharTyped(it) } },
-                    onDelete = onDelete
+                    onLongPress = { alt?.let { onCharTyped(it) } }
                 )
             }
             Spacer(modifier = Modifier.weight(0.5f))
@@ -194,9 +197,11 @@ fun QwertyKeyLayout(
                     modifier = Modifier.weight(1f),
                     height = keyHeight,
                     palette = palette,
+                    onHoldProgressUpdate = onHoldProgressUpdate,
+                    onFiveSecondHoldComplete = onFiveSecondHoldComplete,
+                    onHoldCancelled = onHoldCancelled,
                     onTap = { onCharTyped(char) },
-                    onLongPress = { alt?.let { onCharTyped(it) } },
-                    onDelete = onDelete
+                    onLongPress = { alt?.let { onCharTyped(it) } }
                 )
             }
 
@@ -282,8 +287,7 @@ fun QwertyKeyLayout(
                     columnIndex = 3,
                     totalColumns = 10,
                     onTap = { onCharTyped(",") },
-                    onLongPress = { onCharTyped("!") },
-                    onDelete = onDelete
+                    onLongPress = { onCharTyped("!") }
                 )
             }
 
@@ -332,8 +336,7 @@ fun QwertyKeyLayout(
                 onLongPress = {
                     val longPressChar = if (isAvro) "॥" else "?"
                     onCharTyped(longPressChar)
-                },
-                onDelete = onDelete
+                }
             )
 
             // Enter Key (Theme focal accent)

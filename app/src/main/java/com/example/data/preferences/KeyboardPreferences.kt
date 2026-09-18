@@ -9,11 +9,8 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.datastore.preferences.core.emptyPreferences
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import java.io.IOException
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "nxv_keyboard_prefs")
 
@@ -45,44 +42,7 @@ data class KeyboardSettings(
     val showKeySubLabels: Boolean = true,
     val keyPopupMode: String = "popup",
     val onboardingCompleted: Boolean = false,
-    val keyboardOpenCount: Long = 0L,
-
-    // Deep Theme & Color Customization
-    val customThemeEnabled: Boolean = false,
-    val customKeyboardBgColor: Long = 0xFF121316L,
-    val customKeyBgColor: Long = 0xFF20232AL,
-    val customKeyActionBgColor: Long = 0xFF181A1FL,
-    val customTextColor: Long = 0xFFF0F4F8L,
-    val customSecondaryTextColor: Long = 0xFF7C889BL,
-    val customAccentColor: Long = 0xFF00D2FFL,
-    val customSuggestionBgColor: Long = 0xFF16181DL,
-    val customBackgroundImageUri: String = "",
-    val customBackgroundDim: Float = 0.40f,
-    val customBackgroundBlur: Float = 0f,
-    val customThemeIconStyle: String = "standard",
-    val customKeyBorderWidthDp: Float = 0.5f,
-    val customKeyBorderColor: Long = 0x2AFFFFFFL,
-    val keyElevationDp: Float = 1.5f,
-
-    // Keyboard Sizing & Scaling (Side size% & Up-to-down size% setup)
-    val keyboardWidthRatio: Float = 1.0f,
-    val keyCornerRadiusDp: Int = 8,
-    val keyVerticalGapDp: Int = 5,
-    val keyHorizontalGapDp: Int = 4,
-    val keyboardSideMarginDp: Int = 0,
-    val keyboardBottomMarginDp: Int = 0,
-    val keyFontSizeRatio: Float = 1.0f,
-
-    // Custom Shortcut Buttons Setup (Under/in Suggestion Bar)
-    val enabledShortcuts: Set<String> = setOf(
-        "clipboard", "theme", "edittext", "numpad", "mic", "video_overlay",
-        "stickers", "media", "vault", "language", "vibration", "sound", "one_handed", "settings"
-    ),
-    val shortcutOrder: String = "clipboard,theme,edittext,numpad,mic,video_overlay,stickers,media,vault,language,vibration,sound,one_handed,settings",
-    val showSuggestionMicIcon: Boolean = true,
-    val showSuggestionVideoIcon: Boolean = true,
-    val showQuickPasteChip: Boolean = true,
-    val toolbarPosition: String = "below_suggestions"
+    val keyboardOpenCount: Long = 0L
 )
 
 class KeyboardPreferences(private val context: Context) {
@@ -116,50 +76,9 @@ class KeyboardPreferences(private val context: Context) {
         val KEY_KEY_POPUP_MODE = stringPreferencesKey("key_popup_mode")
         val KEY_ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val KEY_KEYBOARD_OPEN_COUNT = androidx.datastore.preferences.core.longPreferencesKey("keyboard_open_count")
-
-        // Deep Customization Keys
-        val KEY_CUSTOM_THEME_ENABLED = booleanPreferencesKey("custom_theme_enabled")
-        val KEY_CUSTOM_KEYBOARD_BG = androidx.datastore.preferences.core.longPreferencesKey("custom_keyboard_bg_color")
-        val KEY_CUSTOM_KEY_BG = androidx.datastore.preferences.core.longPreferencesKey("custom_key_bg_color")
-        val KEY_CUSTOM_KEY_ACTION_BG = androidx.datastore.preferences.core.longPreferencesKey("custom_key_action_bg_color")
-        val KEY_CUSTOM_TEXT_COLOR = androidx.datastore.preferences.core.longPreferencesKey("custom_text_color")
-        val KEY_CUSTOM_SECONDARY_TEXT_COLOR = androidx.datastore.preferences.core.longPreferencesKey("custom_secondary_text_color")
-        val KEY_CUSTOM_ACCENT_COLOR = androidx.datastore.preferences.core.longPreferencesKey("custom_accent_color")
-        val KEY_CUSTOM_SUGG_BG = androidx.datastore.preferences.core.longPreferencesKey("custom_sugg_bg_color")
-        val KEY_CUSTOM_BG_IMAGE_URI = stringPreferencesKey("custom_bg_image_uri")
-        val KEY_CUSTOM_BG_DIM = floatPreferencesKey("custom_bg_dim")
-        val KEY_CUSTOM_BG_BLUR = floatPreferencesKey("custom_bg_blur")
-        val KEY_CUSTOM_ICON_STYLE = stringPreferencesKey("custom_icon_style")
-        val KEY_CUSTOM_BORDER_WIDTH = floatPreferencesKey("custom_border_width_dp")
-        val KEY_CUSTOM_BORDER_COLOR = androidx.datastore.preferences.core.longPreferencesKey("custom_border_color")
-        val KEY_KEY_ELEVATION = floatPreferencesKey("key_elevation_dp")
-
-        val KEY_WIDTH_RATIO = floatPreferencesKey("keyboard_width_ratio")
-        val KEY_KEY_CORNER_RADIUS = androidx.datastore.preferences.core.intPreferencesKey("key_corner_radius_dp")
-        val KEY_KEY_VERTICAL_GAP = androidx.datastore.preferences.core.intPreferencesKey("key_vertical_gap_dp")
-        val KEY_KEY_HORIZONTAL_GAP = androidx.datastore.preferences.core.intPreferencesKey("key_horizontal_gap_dp")
-        val KEY_SIDE_MARGIN = androidx.datastore.preferences.core.intPreferencesKey("keyboard_side_margin_dp")
-        val KEY_BOTTOM_MARGIN = androidx.datastore.preferences.core.intPreferencesKey("keyboard_bottom_margin_dp")
-        val KEY_KEY_FONT_SIZE_RATIO = floatPreferencesKey("key_font_size_ratio")
-
-        val KEY_ENABLED_SHORTCUTS = stringSetPreferencesKey("enabled_shortcuts")
-        val KEY_SHORTCUT_ORDER = stringPreferencesKey("shortcut_order")
-        val KEY_SHOW_SUGG_MIC = booleanPreferencesKey("show_sugg_mic")
-        val KEY_SHOW_SUGG_VIDEO = booleanPreferencesKey("show_sugg_video")
-        val KEY_SHOW_QUICK_PASTE = booleanPreferencesKey("show_quick_paste")
-        val KEY_TOOLBAR_POSITION = stringPreferencesKey("toolbar_position")
     }
 
-    val settingsFlow: Flow<KeyboardSettings> = context.dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                android.util.Log.e("KeyboardPreferences", "Error reading preferences", exception)
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { prefs ->
+    val settingsFlow: Flow<KeyboardSettings> = context.dataStore.data.map { prefs ->
         KeyboardSettings(
             activeLanguages = prefs[KEY_ACTIVE_LANGUAGES] ?: setOf("english", "bangla", "avro"),
             currentLanguage = prefs[KEY_CURRENT_LANGUAGE] ?: "english",
@@ -188,42 +107,7 @@ class KeyboardPreferences(private val context: Context) {
             showKeySubLabels = prefs[KEY_SHOW_KEY_SUBLABELS] ?: true,
             keyPopupMode = prefs[KEY_KEY_POPUP_MODE] ?: "popup",
             onboardingCompleted = prefs[KEY_ONBOARDING_COMPLETED] ?: false,
-            keyboardOpenCount = prefs[KEY_KEYBOARD_OPEN_COUNT] ?: 0L,
-
-            // Deep customization
-            customThemeEnabled = prefs[KEY_CUSTOM_THEME_ENABLED] ?: false,
-            customKeyboardBgColor = prefs[KEY_CUSTOM_KEYBOARD_BG] ?: 0xFF121316L,
-            customKeyBgColor = prefs[KEY_CUSTOM_KEY_BG] ?: 0xFF20232AL,
-            customKeyActionBgColor = prefs[KEY_CUSTOM_KEY_ACTION_BG] ?: 0xFF181A1FL,
-            customTextColor = prefs[KEY_CUSTOM_TEXT_COLOR] ?: 0xFFF0F4F8L,
-            customSecondaryTextColor = prefs[KEY_CUSTOM_SECONDARY_TEXT_COLOR] ?: 0xFF7C889BL,
-            customAccentColor = prefs[KEY_CUSTOM_ACCENT_COLOR] ?: 0xFF00D2FFL,
-            customSuggestionBgColor = prefs[KEY_CUSTOM_SUGG_BG] ?: 0xFF16181DL,
-            customBackgroundImageUri = prefs[KEY_CUSTOM_BG_IMAGE_URI] ?: "",
-            customBackgroundDim = prefs[KEY_CUSTOM_BG_DIM] ?: 0.40f,
-            customBackgroundBlur = prefs[KEY_CUSTOM_BG_BLUR] ?: 0f,
-            customThemeIconStyle = prefs[KEY_CUSTOM_ICON_STYLE] ?: "standard",
-            customKeyBorderWidthDp = prefs[KEY_CUSTOM_BORDER_WIDTH] ?: 0.5f,
-            customKeyBorderColor = prefs[KEY_CUSTOM_BORDER_COLOR] ?: 0x2AFFFFFFL,
-            keyElevationDp = prefs[KEY_KEY_ELEVATION] ?: 1.5f,
-
-            keyboardWidthRatio = prefs[KEY_WIDTH_RATIO] ?: 1.0f,
-            keyCornerRadiusDp = prefs[KEY_KEY_CORNER_RADIUS] ?: 8,
-            keyVerticalGapDp = prefs[KEY_KEY_VERTICAL_GAP] ?: 5,
-            keyHorizontalGapDp = prefs[KEY_KEY_HORIZONTAL_GAP] ?: 4,
-            keyboardSideMarginDp = prefs[KEY_SIDE_MARGIN] ?: 0,
-            keyboardBottomMarginDp = prefs[KEY_BOTTOM_MARGIN] ?: 0,
-            keyFontSizeRatio = prefs[KEY_KEY_FONT_SIZE_RATIO] ?: 1.0f,
-
-            enabledShortcuts = prefs[KEY_ENABLED_SHORTCUTS] ?: setOf(
-                "clipboard", "theme", "edittext", "numpad", "mic", "video_overlay",
-                "stickers", "media", "vault", "language", "vibration", "sound", "one_handed", "settings"
-            ),
-            shortcutOrder = prefs[KEY_SHORTCUT_ORDER] ?: "clipboard,theme,edittext,numpad,mic,video_overlay,stickers,media,vault,language,vibration,sound,one_handed,settings",
-            showSuggestionMicIcon = prefs[KEY_SHOW_SUGG_MIC] ?: true,
-            showSuggestionVideoIcon = prefs[KEY_SHOW_SUGG_VIDEO] ?: true,
-            showQuickPasteChip = prefs[KEY_SHOW_QUICK_PASTE] ?: true,
-            toolbarPosition = prefs[KEY_TOOLBAR_POSITION] ?: "below_suggestions"
+            keyboardOpenCount = prefs[KEY_KEYBOARD_OPEN_COUNT] ?: 0L
         )
     }
 
@@ -346,118 +230,6 @@ class KeyboardPreferences(private val context: Context) {
         context.dataStore.edit { it[KEY_KEYBOARD_OPEN_COUNT] = 0L }
     }
 
-    suspend fun updateCustomThemeEnabled(enabled: Boolean) {
-        context.dataStore.edit { it[KEY_CUSTOM_THEME_ENABLED] = enabled }
-    }
-
-    suspend fun updateCustomKeyboardBg(color: Long) {
-        context.dataStore.edit { it[KEY_CUSTOM_KEYBOARD_BG] = color }
-    }
-
-    suspend fun updateCustomKeyBg(color: Long) {
-        context.dataStore.edit { it[KEY_CUSTOM_KEY_BG] = color }
-    }
-
-    suspend fun updateCustomKeyActionBg(color: Long) {
-        context.dataStore.edit { it[KEY_CUSTOM_KEY_ACTION_BG] = color }
-    }
-
-    suspend fun updateCustomTextColor(color: Long) {
-        context.dataStore.edit { it[KEY_CUSTOM_TEXT_COLOR] = color }
-    }
-
-    suspend fun updateCustomSecondaryTextColor(color: Long) {
-        context.dataStore.edit { it[KEY_CUSTOM_SECONDARY_TEXT_COLOR] = color }
-    }
-
-    suspend fun updateCustomAccentColor(color: Long) {
-        context.dataStore.edit { it[KEY_CUSTOM_ACCENT_COLOR] = color }
-    }
-
-    suspend fun updateCustomSuggestionBg(color: Long) {
-        context.dataStore.edit { it[KEY_CUSTOM_SUGG_BG] = color }
-    }
-
-    suspend fun updateCustomBackgroundImageUri(uri: String) {
-        context.dataStore.edit { it[KEY_CUSTOM_BG_IMAGE_URI] = uri }
-    }
-
-    suspend fun updateCustomBackgroundDim(dim: Float) {
-        context.dataStore.edit { it[KEY_CUSTOM_BG_DIM] = dim.coerceIn(0f, 1f) }
-    }
-
-    suspend fun updateCustomBackgroundBlur(blur: Float) {
-        context.dataStore.edit { it[KEY_CUSTOM_BG_BLUR] = blur.coerceIn(0f, 25f) }
-    }
-
-    suspend fun updateCustomIconStyle(style: String) {
-        context.dataStore.edit { it[KEY_CUSTOM_ICON_STYLE] = style }
-    }
-
-    suspend fun updateCustomKeyBorderWidthDp(width: Float) {
-        context.dataStore.edit { it[KEY_CUSTOM_BORDER_WIDTH] = width.coerceIn(0f, 4f) }
-    }
-
-    suspend fun updateCustomKeyBorderColor(color: Long) {
-        context.dataStore.edit { it[KEY_CUSTOM_BORDER_COLOR] = color }
-    }
-
-    suspend fun updateKeyElevationDp(elevation: Float) {
-        context.dataStore.edit { it[KEY_KEY_ELEVATION] = elevation.coerceIn(0f, 8f) }
-    }
-
-    suspend fun updateKeyboardWidthRatio(ratio: Float) {
-        context.dataStore.edit { it[KEY_WIDTH_RATIO] = ratio.coerceIn(0.70f, 1.0f) }
-    }
-
-    suspend fun updateKeyCornerRadiusDp(radiusDp: Int) {
-        context.dataStore.edit { it[KEY_KEY_CORNER_RADIUS] = radiusDp.coerceIn(0, 24) }
-    }
-
-    suspend fun updateKeyVerticalGapDp(gapDp: Int) {
-        context.dataStore.edit { it[KEY_KEY_VERTICAL_GAP] = gapDp.coerceIn(1, 16) }
-    }
-
-    suspend fun updateKeyHorizontalGapDp(gapDp: Int) {
-        context.dataStore.edit { it[KEY_KEY_HORIZONTAL_GAP] = gapDp.coerceIn(1, 14) }
-    }
-
-    suspend fun updateKeyboardSideMarginDp(marginDp: Int) {
-        context.dataStore.edit { it[KEY_SIDE_MARGIN] = marginDp.coerceIn(0, 32) }
-    }
-
-    suspend fun updateKeyboardBottomMarginDp(marginDp: Int) {
-        context.dataStore.edit { it[KEY_BOTTOM_MARGIN] = marginDp.coerceIn(0, 32) }
-    }
-
-    suspend fun updateKeyFontSizeRatio(ratio: Float) {
-        context.dataStore.edit { it[KEY_KEY_FONT_SIZE_RATIO] = ratio.coerceIn(0.75f, 1.35f) }
-    }
-
-    suspend fun updateEnabledShortcuts(shortcuts: Set<String>) {
-        context.dataStore.edit { it[KEY_ENABLED_SHORTCUTS] = shortcuts }
-    }
-
-    suspend fun updateShortcutOrder(order: String) {
-        context.dataStore.edit { it[KEY_SHORTCUT_ORDER] = order }
-    }
-
-    suspend fun updateShowSuggestionMic(show: Boolean) {
-        context.dataStore.edit { it[KEY_SHOW_SUGG_MIC] = show }
-    }
-
-    suspend fun updateShowSuggestionVideo(show: Boolean) {
-        context.dataStore.edit { it[KEY_SHOW_SUGG_VIDEO] = show }
-    }
-
-    suspend fun updateShowQuickPaste(show: Boolean) {
-        context.dataStore.edit { it[KEY_SHOW_QUICK_PASTE] = show }
-    }
-
-    suspend fun updateToolbarPosition(position: String) {
-        context.dataStore.edit { it[KEY_TOOLBAR_POSITION] = position }
-    }
-
     suspend fun restoreAllSettings(settings: KeyboardSettings) {
         context.dataStore.edit { prefs ->
             prefs[KEY_ACTIVE_LANGUAGES] = settings.activeLanguages
@@ -490,37 +262,6 @@ class KeyboardPreferences(private val context: Context) {
             if (settings.keyboardOpenCount > 0) {
                 prefs[KEY_KEYBOARD_OPEN_COUNT] = settings.keyboardOpenCount
             }
-
-            prefs[KEY_CUSTOM_THEME_ENABLED] = settings.customThemeEnabled
-            prefs[KEY_CUSTOM_KEYBOARD_BG] = settings.customKeyboardBgColor
-            prefs[KEY_CUSTOM_KEY_BG] = settings.customKeyBgColor
-            prefs[KEY_CUSTOM_KEY_ACTION_BG] = settings.customKeyActionBgColor
-            prefs[KEY_CUSTOM_TEXT_COLOR] = settings.customTextColor
-            prefs[KEY_CUSTOM_SECONDARY_TEXT_COLOR] = settings.customSecondaryTextColor
-            prefs[KEY_CUSTOM_ACCENT_COLOR] = settings.customAccentColor
-            prefs[KEY_CUSTOM_SUGG_BG] = settings.customSuggestionBgColor
-            prefs[KEY_CUSTOM_BG_IMAGE_URI] = settings.customBackgroundImageUri
-            prefs[KEY_CUSTOM_BG_DIM] = settings.customBackgroundDim
-            prefs[KEY_CUSTOM_BG_BLUR] = settings.customBackgroundBlur
-            prefs[KEY_CUSTOM_ICON_STYLE] = settings.customThemeIconStyle
-            prefs[KEY_CUSTOM_BORDER_WIDTH] = settings.customKeyBorderWidthDp
-            prefs[KEY_CUSTOM_BORDER_COLOR] = settings.customKeyBorderColor
-            prefs[KEY_KEY_ELEVATION] = settings.keyElevationDp
-
-            prefs[KEY_WIDTH_RATIO] = settings.keyboardWidthRatio
-            prefs[KEY_KEY_CORNER_RADIUS] = settings.keyCornerRadiusDp
-            prefs[KEY_KEY_VERTICAL_GAP] = settings.keyVerticalGapDp
-            prefs[KEY_KEY_HORIZONTAL_GAP] = settings.keyHorizontalGapDp
-            prefs[KEY_SIDE_MARGIN] = settings.keyboardSideMarginDp
-            prefs[KEY_BOTTOM_MARGIN] = settings.keyboardBottomMarginDp
-            prefs[KEY_KEY_FONT_SIZE_RATIO] = settings.keyFontSizeRatio
-
-            prefs[KEY_ENABLED_SHORTCUTS] = settings.enabledShortcuts
-            prefs[KEY_SHORTCUT_ORDER] = settings.shortcutOrder
-            prefs[KEY_SHOW_SUGG_MIC] = settings.showSuggestionMicIcon
-            prefs[KEY_SHOW_SUGG_VIDEO] = settings.showSuggestionVideoIcon
-            prefs[KEY_SHOW_QUICK_PASTE] = settings.showQuickPasteChip
-            prefs[KEY_TOOLBAR_POSITION] = settings.toolbarPosition
         }
     }
 }

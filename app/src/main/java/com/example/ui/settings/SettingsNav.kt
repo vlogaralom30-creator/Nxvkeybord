@@ -4,7 +4,6 @@ enum class SettingsScreen {
     ONBOARDING,
     HOME,
     THEME_LIBRARY,
-    CUSTOM_THEME_STUDIO,
     KEYBOARD_PREFS,
     CUSTOMIZE_KEYS,
     TYPING_PREFS,
@@ -15,7 +14,6 @@ enum class SettingsScreen {
     VAULT,
     TYPING_ANALYTICS,
     BACKUP_RESTORE,
-    SYSTEM_DIAGNOSTICS,
     PRIVACY,
     ABOUT
 }

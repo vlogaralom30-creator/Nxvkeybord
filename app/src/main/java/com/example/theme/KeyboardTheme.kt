@@ -3,11 +3,9 @@ package com.example.theme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.data.preferences.KeyboardSettings
 
 enum class ThemeSpecialIconStyle {
     STANDARD,
-    FREE_FIRE_BLACK_GOLD,
     PUPPY_MINIMAL,
     STRAWBERRY_DESSERT,
     KAWAII_KITTEN,
@@ -19,7 +17,6 @@ enum class ThemeSpecialIconStyle {
 
 enum class KeyPopupStyle {
     STANDARD,
-    FREE_FIRE_POPUP,
     PUPPY_CHARACTER,
     STRAWBERRY_SWEET,
     KAWAII_KITTY_POPUP,
@@ -30,7 +27,6 @@ enum class KeyPopupStyle {
 
 enum class SpacebarStyle {
     STANDARD_BAR,
-    FREE_FIRE_BAR,
     PUPPY_BRACKET,
     STRAWBERRY_PILL,
     KITTY_PAW_BAR,
@@ -76,42 +72,6 @@ data class KeyboardPalette(
 )
 
 object KeyboardThemes {
-
-    // Free Fire Black Gold - Battle Royale Dark Gaming Theme with Gold Highlights
-    val FreeFireBlackGold = KeyboardPalette(
-        themeId = "freefire_black_gold",
-        themeName = "Free Fire Black Gold",
-        themeDescription = "Battle Royale dark gaming theme with metallic gold borders, glowing highlights, and character avatar keys",
-        category = "Gaming & Featured",
-        keyboardBackground = Color(0xFF090B0F), // Deep black background
-        keyBackground = Color(0xD9101318), // Glossy translucent dark charcoal
-        keyPressedBackground = Color(0xFF2B220C), // Deep gold-amber press
-        keyActionBackground = Color(0xEE161A22), // Deep navy-charcoal action keys
-        textColor = Color(0xFFFFFFFF), // Crisp white gaming typography
-        secondaryTextColor = Color(0xFFC0A664), // Warm metallic gold secondary hints
-        accentColor = Color(0xFFFFD700), // Rich metallic gold accent
-        onAccentColor = Color(0xFF101216), // Dark on gold
-        suggestionBarBackground = Color(0xDE0A0C10), // Sleek semi-transparent dark glass
-        suggestionHighlightColor = Color(0xFFFFD700), // Gold suggestion highlight
-        dividerColor = Color(0x33FFD700),
-        keyBorderColor = Color(0xFFE5B83B), // Metallic gold border
-        keyBorderWidth = 1.dp,
-        keyCornerRadius = 9.dp,
-        keyElevation = 2.dp,
-        pressedElevation = 0.5.dp,
-        specialIconStyle = ThemeSpecialIconStyle.FREE_FIRE_BLACK_GOLD,
-        popupStyle = KeyPopupStyle.FREE_FIRE_POPUP,
-        spacebarStyle = SpacebarStyle.FREE_FIRE_BAR,
-        spacebarWatermark = "FREE FIRE",
-        showTopRowHints = true,
-        topRowHintColor = Color(0xFFC59B27),
-        previewColors = listOf(
-            Color(0xFF090B0F),
-            Color(0xFF101318),
-            Color(0xFFFFD700),
-            Color(0xFFFFFFFF)
-        )
-    )
 
     // Retro Mech (Mechanical keyboard with 3D keycaps and cobalt/orange style) - Reference Image 2
     val RetroMech = KeyboardPalette(
@@ -664,36 +624,7 @@ object KeyboardThemes {
         )
     )
 
-    val CustomDiy = KeyboardPalette(
-        themeId = "custom_diy",
-        themeName = "কাস্টম থিম (Custom DIY)",
-        themeDescription = "আপনার নিজের পছন্দের ব্যাকগ্রাউন্ড কালার, ফন্ট কালার, বাটন স্টাইল ও কাস্টম ফটো আর্টওয়ার্ক",
-        category = "Custom & Personal",
-        keyboardBackground = Color(0xFF121316),
-        keyBackground = Color(0xFF20232A),
-        keyPressedBackground = Color(0xFF323742),
-        keyActionBackground = Color(0xFF181A1F),
-        textColor = Color(0xFFF0F4F8),
-        secondaryTextColor = Color(0xFF7C889B),
-        accentColor = Color(0xFF00D2FF),
-        onAccentColor = Color(0xFF003258),
-        suggestionBarBackground = Color(0xFF16181D),
-        suggestionHighlightColor = Color(0xFF00D2FF),
-        dividerColor = Color(0x33323742),
-        keyBorderColor = Color(0x2AFFFFFF),
-        keyBorderWidth = 0.5.dp,
-        keyCornerRadius = 8.dp,
-        keyElevation = 1.5.dp,
-        previewColors = listOf(
-            Color(0xFF121316),
-            Color(0xFF20232A),
-            Color(0xFF00D2FF),
-            Color(0xFFF0F4F8)
-        )
-    )
-
     val ALL_THEMES: List<KeyboardPalette> = listOf(
-        FreeFireBlackGold,
         RidmikDark,
         RidmikProbhat,
         RidmikClassic,
@@ -709,57 +640,11 @@ object KeyboardThemes {
         GeometricBalance,
         Light,
         Amoled,
-        Custom,
-        CustomDiy
+        Custom
     )
 
-    fun getPalette(themeName: String, settings: KeyboardSettings? = null): KeyboardPalette {
-        if (settings != null && (settings.customThemeEnabled || themeName.lowercase() in listOf("custom_diy", "custom_theme", "diy"))) {
-            val specialIcon = when (settings.customThemeIconStyle.lowercase()) {
-                "puppy", "puppy_pop" -> ThemeSpecialIconStyle.PUPPY_MINIMAL
-                "strawberry", "strawberry_dessert" -> ThemeSpecialIconStyle.STRAWBERRY_DESSERT
-                "kitten", "kawaii_kitten", "kitty" -> ThemeSpecialIconStyle.KAWAII_KITTEN
-                "retro_mech", "mech", "mechanical" -> ThemeSpecialIconStyle.RETRO_MECH
-                "minimal", "reference_minimal" -> ThemeSpecialIconStyle.REFERENCE_MINIMAL
-                "rgb", "rgb_neon", "neon" -> ThemeSpecialIconStyle.RGB_NEON
-                "cat", "cat_3d_slate", "cat_slate" -> ThemeSpecialIconStyle.CAT_3D_SLATE
-                else -> ThemeSpecialIconStyle.STANDARD
-            }
-            val accent = Color(settings.customAccentColor)
-            val isLightAccent = (accent.red * 0.299f + accent.green * 0.587f + accent.blue * 0.114f) > 0.6f
-            return KeyboardPalette(
-                themeId = "custom_diy",
-                themeName = "কাস্টম থিম (Custom DIY)",
-                themeDescription = "আপনার নিজস্ব ব্যাকগ্রাউন্ড কালার, বাটন কালার, ফন্ট কালার ও ফটো আর্ট",
-                category = "Custom & Personal",
-                keyboardBackground = Color(settings.customKeyboardBgColor),
-                keyBackground = Color(settings.customKeyBgColor),
-                keyPressedBackground = Color(settings.customKeyBgColor).copy(alpha = 0.85f),
-                keyActionBackground = Color(settings.customKeyActionBgColor),
-                textColor = Color(settings.customTextColor),
-                secondaryTextColor = Color(settings.customSecondaryTextColor),
-                accentColor = accent,
-                onAccentColor = if (isLightAccent) Color(0xFF000000) else Color(0xFFFFFFFF),
-                suggestionBarBackground = Color(settings.customSuggestionBgColor),
-                suggestionHighlightColor = accent,
-                dividerColor = Color(settings.customTextColor).copy(alpha = 0.15f),
-                keyBorderColor = Color(settings.customKeyBorderColor),
-                keyBorderWidth = settings.customKeyBorderWidthDp.dp,
-                keyCornerRadius = settings.keyCornerRadiusDp.dp,
-                keyElevation = settings.keyElevationDp.dp,
-                pressedElevation = (settings.keyElevationDp * 0.3f).dp,
-                specialIconStyle = specialIcon,
-                previewColors = listOf(
-                    Color(settings.customKeyboardBgColor),
-                    Color(settings.customKeyBgColor),
-                    accent,
-                    Color(settings.customTextColor)
-                )
-            )
-        }
-
-        val base = when (themeName.lowercase()) {
-            "freefire_black_gold", "freefire", "free_fire", "freefire_gold", "free_fire_black_gold", "freefiretheme" -> FreeFireBlackGold
+    fun getPalette(themeName: String): KeyboardPalette {
+        return when (themeName.lowercase()) {
             "ridmik_dark", "ridmik", "ridmikdark", "ridmik_black" -> RidmikDark
             "ridmik_probhat", "probhat" -> RidmikProbhat
             "ridmik_classic", "ridmikclassic", "classic_ridmik", "teal" -> RidmikClassic
@@ -776,14 +661,7 @@ object KeyboardThemes {
             "light" -> Light
             "amoled" -> Amoled
             "custom", "indigo" -> Custom
-            "custom_diy", "diy" -> CustomDiy
             else -> RidmikDark
-        }
-
-        return if (settings != null && settings.keyCornerRadiusDp != 8) {
-            base.copy(keyCornerRadius = settings.keyCornerRadiusDp.dp)
-        } else {
-            base
         }
     }
 }

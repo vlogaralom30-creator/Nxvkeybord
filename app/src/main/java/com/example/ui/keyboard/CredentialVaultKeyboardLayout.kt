@@ -19,11 +19,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PushPin
@@ -53,7 +51,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.entity.SavedCredential
-import com.example.security.StrongPasswordGenerator
 import com.example.theme.KeyboardPalette
 
 @Composable
@@ -74,17 +71,13 @@ fun CredentialVaultKeyboardLayout(
     var newService by remember { mutableStateOf("") }
     var newUsername by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
-    var newSiteUrl by remember { mutableStateOf("") }
-    var newAppName by remember { mutableStateOf("") }
 
     val filtered = if (searchQuery.isBlank()) {
         credentials
     } else {
         credentials.filter {
             it.serviceName.contains(searchQuery, ignoreCase = true) ||
-            it.username.contains(searchQuery, ignoreCase = true) ||
-            it.siteUrl.contains(searchQuery, ignoreCase = true) ||
-            it.appName.contains(searchQuery, ignoreCase = true)
+            it.username.contains(searchQuery, ignoreCase = true)
         }
     }
 
@@ -127,7 +120,7 @@ fun CredentialVaultKeyboardLayout(
                         .padding(horizontal = 5.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = "Auto-Saved (${credentials.size})",
+                        text = "Auto-Save",
                         color = palette.accentColor,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
@@ -136,39 +129,6 @@ fun CredentialVaultKeyboardLayout(
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Quick Generate Button
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(palette.keyActionBackground)
-                        .clickable {
-                            val gen = StrongPasswordGenerator.generatePassword(16)
-                            onAutofillText(gen)
-                        }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            tint = palette.accentColor,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = "Strong Pass",
-                            color = palette.textColor,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(6.dp))
-
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
@@ -244,7 +204,7 @@ fun CredentialVaultKeyboardLayout(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Type passwords in any app/site to auto-save, or tap '+ Add'.",
+                        text = "Type a password in any app to auto-save, or tap '+ Add' above.",
                         color = palette.secondaryTextColor,
                         fontSize = 11.sp
                     )
@@ -280,20 +240,11 @@ fun CredentialVaultKeyboardLayout(
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
-                                        text = item.serviceName.ifBlank { item.appName.ifBlank { "Account" } },
+                                        text = item.serviceName.ifBlank { "Account" },
                                         color = palette.accentColor,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    if (item.siteUrl.isNotBlank()) {
-                                        Text(
-                                            text = "• ${item.siteUrl}",
-                                            color = palette.secondaryTextColor,
-                                            fontSize = 10.sp,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
                                     if (item.isPinned) {
                                         Icon(
                                             imageVector = Icons.Default.PushPin,
@@ -331,7 +282,7 @@ fun CredentialVaultKeyboardLayout(
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = "Fill User",
+                                            text = "Tap to fill",
                                             color = palette.secondaryTextColor,
                                             fontSize = 9.sp
                                         )
@@ -363,7 +314,7 @@ fun CredentialVaultKeyboardLayout(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "Fill Password",
+                                        text = "Tap to fill",
                                         color = palette.accentColor,
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold
@@ -440,7 +391,7 @@ fun CredentialVaultKeyboardLayout(
                     OutlinedTextField(
                         value = newService,
                         onValueChange = { newService = it },
-                        label = { Text("Service / Site Name / App") },
+                        label = { Text("Service / Website / App Name") },
                         placeholder = { Text("e.g. Facebook, Gmail, Bank") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
@@ -448,42 +399,16 @@ fun CredentialVaultKeyboardLayout(
                     OutlinedTextField(
                         value = newUsername,
                         onValueChange = { newUsername = it },
-                        label = { Text("Email / Phone / Username") },
+                        label = { Text("Email / Username / Phone") },
                         placeholder = { Text("e.g. myemail@gmail.com") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = newPassword,
-                            onValueChange = { newPassword = it },
-                            label = { Text("Password") },
-                            placeholder = { Text("Enter password") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(palette.accentColor)
-                                .clickable {
-                                    newPassword = StrongPasswordGenerator.generatePassword(16)
-                                }
-                                .padding(horizontal = 8.dp, vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Generate", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
                     OutlinedTextField(
-                        value = newSiteUrl,
-                        onValueChange = { newSiteUrl = it },
-                        label = { Text("Website URL (Optional)") },
-                        placeholder = { Text("e.g. https://facebook.com") },
+                        value = newPassword,
+                        onValueChange = { newPassword = it },
+                        label = { Text("Password") },
+                        placeholder = { Text("Enter password") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -497,8 +422,6 @@ fun CredentialVaultKeyboardLayout(
                             newService = ""
                             newUsername = ""
                             newPassword = ""
-                            newSiteUrl = ""
-                            newAppName = ""
                             showAddDialog = false
                         }
                     },
@@ -515,4 +438,3 @@ fun CredentialVaultKeyboardLayout(
         )
     }
 }
-
